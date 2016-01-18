@@ -1,25 +1,29 @@
-' Anime 0.1a
-' Copyright (c) 2013 Nonki Takahashi.  All rights reserved.
+' Anime 0.2a
+' Copyright © 2013-2016 Nonki Takahashi.  The MIT License.
 '
 ' History:
-'  0.1a 24-05-2013 Created as prototype version.
+'  0.2a 2016-01-18 Changed graphics window size.
+'  0.1a 2013-05-24 Created as prototype version.
 '
-Init()
-While "true"
+GraphicsWindow.Title = "Anime 0.2a"
+Form()
+While "True"
   WaitCommand()
   DoCommand()
 EndWhile
-Sub Init
-  gw = GraphicsWindow.Width
-  gh = GraphicsWindow.Height
+Sub Form
+  gw = 800
+  gh = 600
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
   rh = 64
-  GraphicsWindow.BackgroundColor = "gray"
-  GraphicsWindow.BrushColor = "lightgray"
+  GraphicsWindow.BackgroundColor = "DimGray"
+  GraphicsWindow.BrushColor = "Gray"
   GraphicsWindow.FillRectangle(0, 0, gw, rh)
-  GraphicsWindow.BrushColor = "white"
-  width = gw / 2
-  height = gh / 2
-  x = gw / 4
+  GraphicsWindow.BrushColor = "White"
+  width = 598
+  height = 428
+  x = (gw - width) / 2
   y = rh + (gh - rh - height) / 2
   GraphicsWindow.FillRectangle(x, y, width, height)
 EndSub
