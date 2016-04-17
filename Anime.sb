@@ -1,24 +1,26 @@
-' Anime 0.2a
-' Copyright © 2013-2016 Nonki Takahashi.  The MIT License.
+''' Anime 0.3a
+''' Copyright © 2013-2016 Nonki Takahashi.  The MIT License.
+'''
+''' History:
+'''  0.3a 2016-04-17 Added menu icons.
+'''  0.2a 2016-01-18 Changed graphics window size.
+'''  0.1a 2013-05-24 Created as prototype version.
 '
-' History:
-'  0.2a 2016-01-18 Changed graphics window size.
-'  0.1a 2013-05-24 Created as prototype version.
-'
-GraphicsWindow.Title = "Anime 0.2a"
+GraphicsWindow.Title = "Anime 0.3a"
 Form()
 While "True"
   WaitCommand()
   DoCommand()
 EndWhile
 Sub Form
+  ''' Define and show input form
   gw = 800
   gh = 600
   GraphicsWindow.Width = gw
   GraphicsWindow.Height = gh
   rh = 64
-  GraphicsWindow.BackgroundColor = "DimGray"
-  GraphicsWindow.BrushColor = "Gray"
+  GraphicsWindow.BackgroundColor = "#222222"
+  GraphicsWindow.BrushColor = "#444444"
   GraphicsWindow.FillRectangle(0, 0, gw, rh)
   GraphicsWindow.BrushColor = "White"
   width = 598
@@ -26,8 +28,28 @@ Sub Form
   x = (gw - width) / 2
   y = rh + (gh - rh - height) / 2
   GraphicsWindow.FillRectangle(x, y, width, height)
+  DrawMenu()
 EndSub
 Sub WaitCommand
+  ''' Wait command
+  ''' N/A
 EndSub
 Sub DoCommand
+  ''' Do command
+  ''' N/A
+EndSub
+Sub DrawMenu
+  ''' Draw menu
+  menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;"
+  folder = Program.Directory + "\img"
+  GraphicsWindow.FontName = "Trebuchet MS"
+  GraphicsWindow.FontBold = "False"
+  x = 10
+  y = 4
+  For i = 1 To 6
+    fname = folder + "\" + menu[i] + ".png"
+    GraphicsWindow.DrawImage(fname, x, y)
+    GraphicsWindow.DrawText(x + 6, y + 40, menu[i])
+    x = x + 50
+  EndFor
 EndSub
