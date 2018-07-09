@@ -1,55 +1,638 @@
-''' Anime 0.3a
-''' Copyright © 2013-2016 Nonki Takahashi.  The MIT License.
-'''
-''' History:
-'''  0.3a 2016-04-17 Added menu icons.
-'''  0.2a 2016-01-18 Changed graphics window size.
-'''  0.1a 2013-05-24 Created as prototype version.
+' Anime 0.4a
+' Copyright © 2013-2017 Nonki Takahashi.  The MIT License.
 '
-GraphicsWindow.Title = "Anime 0.3a"
+' History:
+'  0.4a 2017-08-16 Added animation demo.
+'  0.3a 2016-04-17 Added menu icons.
+'  0.2a 2016-01-18 Changed graphics window size.
+'  0.1a 2013-05-24 Created as prototype version.
+
+GraphicsWindow.Title = "Anime 0.4a"
+Init()
 Form()
+GraphicsWindow.MouseDown = OnMouseDown
 While "True"
   WaitCommand()
   DoCommand()
 EndWhile
+
+Sub AddMenu
+  ' Add menu
+  menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;"
+  folder = Program.Directory + "\img"
+  fs = 12
+  fn = "Trebuchet MS"
+  fb = "False"
+  fi = "False"
+  x = 10
+  y = 4
+  bc = "White"
+  For i = 1 To Array.GetItemCount(menu)
+    imageName = folder + "\" + menu[i] + ".png"
+    Shapes_AddImage()
+    x = x + 6
+    y = y + 40
+    txt = menu[i]
+    Shapes_AddText()
+    x = x - 6
+    y = y - 40
+    x = x + 50
+  EndFor
+EndSub
+
 Sub Form
-  ''' Define and show input form
+  ' Define and show input form
   gw = 800
   gh = 600
   GraphicsWindow.Width = gw
   GraphicsWindow.Height = gh
+  GraphicsWindow.BackgroundColor = "White"
+  ' add rocket
+  Shapes_Init_Rocket()
+  name = "rocket"
+  Group_Add()
   rh = 64
-  GraphicsWindow.BackgroundColor = "#222222"
-  GraphicsWindow.BrushColor = "#444444"
-  GraphicsWindow.FillRectangle(0, 0, gw, rh)
-  GraphicsWindow.BrushColor = "White"
-  width = 598
-  height = 428
-  x = (gw - width) / 2
-  y = rh + (gh - rh - height) / 2
-  GraphicsWindow.FillRectangle(x, y, width, height)
-  DrawMenu()
+  ww = 598
+  wh = 428
+  x = shX + (gw - ww) / 2
+  y = shY + rh + (gh - rh - wh) / 2
+  i = nGroup
+  Group_Move()
+  ' add robot
+  Shapes_Init_Robot()
+  name = "robot"
+  Group_Add()
+  x = shX + (gw - ww) / 2
+  y = shY + rh + (gh - rh - wh) / 2
+  i = nGroup
+  Group_Move()
+  Group_Zoom()
+  ' add frame
+  shX = 0
+  shY = 0
+  shape = ""
+  pw = 0
+  bc = "#222222"
+  x = 0
+  y = rh
+  width = gw
+  height = (gh - rh - wh) / 2
+  Shapes_AddRectangle()
+  y = y + height + wh
+  Shapes_AddRectangle()
+  y = y - wh
+  width = (gw - ww) / 2
+  height = wh
+  Shapes_AddRectangle()
+  x = gw - width
+  Shapes_AddRectangle()
+  ' add menu bar
+  bc = "#444444"
+  x = 0
+  y = 0
+  width = gw
+  height = rh
+  Shapes_AddRectangle()
+  ' add menu icons
+  AddMenu()
+  name = "Frame"
+  Group_Add()
 EndSub
-Sub WaitCommand
-  ''' Wait command
-  ''' N/A
-EndSub
+
 Sub DoCommand
-  ''' Do command
-  ''' N/A
+  ' Do command
+  ' N/A
 EndSub
-Sub DrawMenu
-  ''' Draw menu
-  menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;"
-  folder = Program.Directory + "\img"
-  GraphicsWindow.FontName = "Trebuchet MS"
-  GraphicsWindow.FontBold = "False"
-  x = 10
-  y = 4
-  For i = 1 To 6
-    fname = folder + "\" + menu[i] + ".png"
-    GraphicsWindow.DrawImage(fname, x, y)
-    GraphicsWindow.DrawText(x + 6, y + 40, menu[i])
-    x = x + 50
+
+Sub Init
+  LF = Text.GetCharacter(10)
+  WQ = Text.GetCharacter(34)
+  Not = "False=True;True=False;"
+  iMin = 0
+  pc = "#000000"
+  alpha = 0 ' dummy
+  angle = 0
+  x2 = 0    ' dummy
+  y2 = 0    ' dummy
+  x3 = 0    ' dummy
+  y3 = 0    ' dummy
+EndSub
+
+Sub OnMouseDown
+  mx = GraphicsWindow.MouseX
+  my = GraphicsWindow.MouseY
+  mouseDown = "True"
+EndSub
+
+Sub WaitCommand
+  ' Wait command
+  ' N/A
+EndSub
+
+Sub Font_GetTextWidth
+  ' param fs - font size
+  ' param fn - font name
+  ' param fb - font bold
+  ' param fi - font italic
+  ' param txt - text to get width in px
+  ' return width - text width
+  yc = 4
+  GraphicsWindow.BrushColor = "#FFFFFF"
+  GraphicsWindow.FillRectangle(0, yc, gw, gh - yc)
+  GraphicsWindow.FontSize = fs
+  GraphicsWindow.FontName = fn
+  GraphicsWindow.FontBold = fb
+  GraphicsWindow.FontItalic = fi
+  GraphicsWindow.BrushColor = "#FEFEFE"
+  GraphicsWindow.DrawText(0, yc, "||")
+  y0 = yc
+  y1 = yc + fs
+  x0 = 0
+  x1 = fs * 2
+  If gw < x1 Then
+    x1 = gw - 1
+  EndIf
+  Font_Measure()
+  px0 = px
+  GraphicsWindow.BrushColor = "#FFFFFF"
+  GraphicsWindow.FillRectangle(0, yc, gw, gh - yc)
+  GraphicsWindow.BrushColor = "Gray"
+  GraphicsWindow.FillRectangle(0, yc + fs, gw, 1)
+  str = "|" + txt + "|"
+  GraphicsWindow.BrushColor = "#FEFEFE"
+  GraphicsWindow.DrawText(0, yc, str)
+  x1 = fs * Text.GetLength(str)
+  If gw < x1 Then
+    x1 = gw - 1
+  EndIf
+  Font_Measure()
+  width = px - px0
+EndSub
+
+Sub Font_Measure
+  ' return px - width in pixel (px)
+  _y = Math.Floor((y0 + y1) / 2)
+  For _x = x0 To x1
+    color = GraphicsWindow.GetPixel(_x, _y)
+    If Not[Text.EndsWith(color, "FFFFFF")] Then
+      left = _x
+      _x = x1  ' exit For
+    EndIf
   EndFor
+  For _x = x1 To x0 Step -1
+    color = GraphicsWindow.GetPixel(_x, _y)
+    If Not[Text.EndsWith(color, "FFFFFF")] Then
+      right = _x
+      _x = x0  ' exit For
+    EndIf
+  EndFor
+  For _x = right To x0 Step -1
+    color = GraphicsWindow.GetPixel(_x, _y)
+    If Text.EndsWith(color, "FFFFFF") Then
+      right = _x + 1
+      _x = x0  ' exit For
+    EndIf
+  EndFor
+  px = right - left
+EndSub
+
+Sub Group_Add
+  ' Group | add shapes to a group
+  ' param name - group name
+  ' param shX, shY, origin of shape array
+  ' param shape[] - shape array
+  ' param nGroup - number of group
+  ' return nGroup - updated number of group
+  ' return group - group array
+  Stack.PushValue("local", i)
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  Stack.PushValue("local", s)
+  nGroup = nGroup + 1
+  grp = ""
+  grp["name"] = name
+  grp["x"] = shX
+  grp["y"] = shY
+  grp["angle"] = 0
+  grp["dir"] = 1
+  Shapes_CalcWidthAndHeight()
+  grp["width"] = shWidth
+  grp["cx"] = shWidth / 2
+  grp["height"] = shHeight
+  s = 1
+  grp["scale"] = s
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    GraphicsWindow.PenWidth = shp["pw"] * s
+    If shp["pw"] > 0 Then
+      GraphicsWindow.PenColor = shp["pc"]
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) Then
+      GraphicsWindow.BrushColor = shp["bc"]
+    EndIf
+    If shp["func"] = "rect" Then
+      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "ell" Then
+      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "tri" Then
+      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
+    ElseIf shp["func"] = "line" Then
+      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
+    ElseIf shp["func"] = "text" Then
+      If silverlight Then
+        fs = Math.Floor(shp["fs"] * 0.9)
+      Else
+        fs = shp["fs"]
+      EndIf
+      GraphicsWindow.FontSize = fs * s
+      GraphicsWindow.FontName = shp["fn"]
+      GraphicsWindow.FontBold = shp["fb"]
+      GraphicsWindow.FontItalic = shp["fi"]
+      shp["obj"] = Shapes.AddText(shp["text"])
+    ElseIf shp["func"] = "img" Then
+      shp["obj"] = Shapes.AddImage(shp["img"])
+      Shapes.Move(shp["obj"], shp["x"], shp["y"])
+    EndIf
+    x = shp["x"]
+    y = shp["y"]
+    shp["rx"] = x
+    shp["ry"] = y
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      alpha = Math.GetRadians(shp["angle"])
+      SB_RotateWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
+      Shapes.Rotate(shp["obj"], shp["angle"])
+    EndIf
+    shape[i] = shp
+  EndFor
+  grp["shape"] = shape
+  group[nGroup] = grp
+  s = Stack.PopValue("local")
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  i = Stack.PopValue("local")
+EndSub
+
+Sub Group_Move
+  ' Group | Move a group
+  ' param group[i] - the group to move
+  ' param x, y - the position to move
+  ' return group[i] - the updated group
+  Stack.PushValue("local", s)
+  Stack.PushValue("local", n)
+  Stack.PushValue("local", j)
+  grp = group[i]
+  s = grp["scale"]
+  grp["x"] = x
+  grp["y"] = y
+  shape = grp["shape"]
+  n = Array.GetItemCount(shape)
+  For j = 1 To n
+    shp = shape[j]
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    Else
+      _x = shp["rx"]
+      _y = shp["ry"]
+    EndIf
+    Shapes.Move(shp["obj"], grp["x"] + _x * s, grp["y"] + _y * s)
+  EndFor
+  group[i] = grp
+  j = Stack.PopValue("local")
+  n = Stack.PopValue("local")
+  s = Stack.PopValue("local")
+EndSub
+
+Sub Group_Zoom
+  ' Group | Zoom a group
+  ' param group[i] - the group to zoom
+  ' param scale - the scale to zoom
+  ' return group[i] - the updated group
+  grp = group[i]
+  s = scale
+  grp["scale"] = scale
+  grp["x"] = x
+  grp["y"] = y
+  shape = grp["shape"]
+  n = Array.GetItemCount(shape)
+  For j = 1 To n
+    shp = shape[j]
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    Else
+      _x = shp["rx"]
+      _y = shp["ry"]
+    EndIf
+    Shapes.Zoom(shp["obj"], s, s)
+  EndFor
+EndSub
+
+Sub SB_RotateWorkaround
+  ' Small Basic | Rotate workaround for Silverlight
+  ' param shp - current shape
+  ' param x, y - original coordinate
+  ' param alpha - angle [radian]
+  ' returns x, y - workaround coordinate
+  If shp["func"] = "tri" Then
+    x1 = -Math.Floor(shp["x3"] / 2)
+    y1 = -Math.Floor(shp["y3"] / 2)
+  ElseIf shp["func"] = "line" Then
+    x1 = -Math.Floor(Math.Abs(shp["x1"] - shp["x2"]) / 2)
+    y1 = -Math.Floor(Math.Abs(shp["y1"] - shp["y2"]) / 2)
+  EndIf
+  ox = x - x1
+  oy = y - y1
+  x = x1 * Math.Cos(alpha) - y1 * Math.Sin(alpha) + ox
+  y = x1 * Math.Sin(alpha) + y1 * Math.Cos(alpha) + oy
+EndSub
+
+Sub SB_Workaround
+  ' Small Basic | Workaround for Silverlight
+  ' returns silverlight - "True" if in remote
+  color = GraphicsWindow.GetPixel(0, 0)
+  If Text.GetLength(color) > 7 Then
+    silverlight = "True"
+    msWait = 300
+  Else
+    silverlight = "False"
+  EndIf
+EndSub
+
+Sub Shapes_AddEllipse
+  ' param x, y - top left position
+  ' param width
+  ' param height
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  func = "ell"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddImage
+  ' param x, y - top left position
+  ' param imageName - image url
+  Shapes_EntryClear()
+  func = "img"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddRectangle
+  ' param x, y - top left position
+  ' param width
+  ' param height
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  func = "rect"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddText
+  ' param x, y - top left position
+  ' param txt - text
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  Shapes_FontToEntry()
+  func = "text"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_BrushToEntry
+  shp["bc"] = bc
+EndSub
+
+Sub Shapes_CalcWidthAndHeight
+  ' Shapes | Calculate total width and height of shapes
+  ' param shape[] - shape array
+  ' return shWidth, shHeight - total size of shapes
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    If shp["func"] = "tri" Or shp["func"] = "line" Then
+      xmin = shp["x1"]
+      xmax = shp["x1"]
+      ymin = shp["y1"]
+      ymax = shp["y1"]
+      If shp["x2"] < xmin Then
+        xmin = shp["x2"]
+      EndIf
+      If xmax < shp["x2"] Then
+        xmax = shp["x2"]
+      EndIf
+      If shp["y2"] < ymin Then
+        ymin = shp["y2"]
+      EndIf
+      If ymax < shp["y2"] Then
+        ymax = shp["y2"]
+      EndIf
+      If shp["func"] = "tri" Then
+        If shp["x3"] < xmin Then
+          xmin = shp["x3"]
+        EndIf
+        If xmax < shp["x3"] Then
+          xmax = shp["x3"]
+        EndIf
+        If shp["y3"] < ymin Then
+          ymin = shp["y3"]
+        EndIf
+        If ymax < shp["y3"] Then
+          ymax = shp["y3"]
+        EndIf
+      EndIf
+      shp["width"] = xmax - xmin
+      shp["height"] = ymax - ymin
+    EndIf
+    If i = 1 Then
+      shWidth = shp["x"] + shp["width"]
+      shHeight = shp["y"] + shp["height"]
+    Else
+      If shWidth < shp["x"] + shp["width"] Then
+        shWidth = shp["x"] + shp["width"]
+      EndIf
+      If shHeight < shp["y"] + shp["height"] Then
+        shHeight = shp["y"] + shp["height"]
+      EndIf
+    EndIf
+    shape[i] = shp
+  EndFor
+EndSub
+
+Sub Shapes_DumpArray
+  Stack.PushValue("local", buf)
+  buf = ""
+  If 0 < shX Then
+    buf = buf + "  shX = " + shX + LF
+  EndIf
+  If 0 < shY Then
+    buf = buf + "  shY = " + shY + LF
+  EndIf
+  For i = iMin To iMax
+    buf = buf + "  shape[" + i + "] = " + WQ + shape[i] + WQ + LF
+  EndFor
+  TextWindow.WriteLine(buf)
+  buf = Stack.PopValue("local")
+EndSub
+
+Sub Shapes_EntryClear
+  shp = ""
+EndSub
+
+Sub Shapes_EntryToArray
+  iMax = iMax + 1
+  shape[iMax] = shp
+EndSub
+
+Sub Shapes_FontToEntry
+  shp["fs"] = fs
+  shp["fn"] = fn
+  shp["fb"] = fb
+  shp["fi"] = fi
+EndSub
+
+Sub Shapes_FuncToEntry
+  shp["func"] = func
+  If func = "ell" Then
+    shp["width"] = Math.Floor(width * 100) / 100
+    shp["height"] = Math.Floor(height * 100) / 100
+  ElseIf func = "rect" Then
+    shp["width"] = Math.Floor(width * 100) / 100
+    shp["height"] = Math.Floor(height * 100) / 100
+  ElseIf func = "tri" Then
+    shp["x1"] = Math.Floor(x1 * 100) / 100
+    shp["y1"] = Math.Floor(y1 * 100) / 100
+    shp["x2"] = Math.Floor(x2 * 100) / 100
+    shp["y2"] = Math.Floor(y2 * 100) / 100
+    shp["x3"] = Math.Floor(x3 * 100) / 100
+    shp["y3"] = Math.Floor(y3 * 100) / 100
+  ElseIf func = "line" Then
+    shp["x1"] = Math.Floor(x1 * 100) / 100
+    shp["y1"] = Math.Floor(y1 * 100) / 100
+    shp["x2"] = Math.Floor(x2 * 100) / 100
+    shp["y2"] = Math.Floor(y2 * 100) / 100
+  ElseIf func = "text" Then
+    shp["text"] = txt
+    Font_GetTextWidth()
+    shp["width"] = width
+    shp["height"] = fs
+  ElseIf func = "img" Then
+    shp["src"] = imageName
+    If Text.IsSubText(imageName, ":") Then
+      fileNameOrUrl = imageName
+    Else
+      fileNameOrUrl = Program.Directory + "/" + imageName
+    EndIf
+    img = ImageList.LoadImage(fileNameOrUrl)
+    shp["img"] = img
+    shp["width"] = ImageList.GetWidthOfImage(img)
+    shp["height"] = ImageList.GetHeightOfImage(img)
+  EndIf
+EndSub
+
+Sub Shapes_Init_Robot
+  ' Shapes | Initialize shapes data
+  ' return shX, shY - current position of shapes
+  ' return shape - array of shapes
+  shX = 400 ' x offset
+  shY = 172 ' y offset
+  shape = ""
+  shape[1] = "func=rect;x=30;y=0;width=63;height=53;bc=#939393;pc=#000000;pw=1;"
+  shape[2] = "func=ell;x=37;y=10;width=16;height=16;bc=#CD9F5A;pc=#000000;pw=1;"
+  shape[3] = "func=ell;x=70;y=10;width=16;height=16;bc=#CD9F5A;pc=#000000;pw=1;"
+  shape[4] = "func=rect;x=48;y=36;width=26;height=8;bc=#222222;pc=#000000;pw=1;"
+  shape[5] = "func=tri;x=17;y=20;x1=7;y1=0;x2=0;y2=11;x3=14;y3=11;angle=90;bc=#939393;pc=#000000;pw=1;"
+  shape[6] = "func=tri;x=91;y=20;x1=7;y1=0;x2=0;y2=11;x3=14;y3=11;angle=270;bc=#939393;pc=#000000;pw=1;"
+  shape[7] = "func=rect;x=56;y=52;width=10;height=69;bc=#666666;pc=#000000;pw=1;"
+  shape[8] = "func=ell;x=19;y=68;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[9] = "func=ell;x=84;y=68;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[10] = "func=ell;x=43;y=149;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[11] = "func=ell;x=64;y=149;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[12] = "func=rect;x=33;y=71;width=53;height=13;bc=#666666;pc=#000000;pw=1;"
+  shape[13] = "func=rect;x=45;y=63;width=33;height=91;bc=#939393;pc=#000000;pw=1;"
+  shape[14] = "func=ell;x=43;y=231;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[15] = "func=ell;x=64;y=231;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[16] = "func=rect;x=46;y=165;width=10;height=69;bc=#666666;pc=#000000;pw=1;"
+  shape[17] = "func=rect;x=67;y=165;width=10;height=69;bc=#666666;pc=#000000;pw=1;"
+  shape[18] = "func=rect;x=17;y=240;width=43;height=16;bc=#939393;pc=#000000;pw=1;"
+  shape[19] = "func=ell;x=0;y=109;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[20] = "func=ell;x=105;y=108;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[21] = "func=ell;x=96;y=152;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[22] = "func=ell;x=11;y=153;width=16;height=19;bc=#939393;pc=#000000;pw=1;"
+  shape[23] = "func=rect;x=11;y=81;width=12;height=35;angle=25;bc=#666666;pc=#000000;pw=1;"
+  shape[24] = "func=rect;x=97;y=80;width=12;height=35;angle=331;bc=#666666;pc=#000000;pw=1;"
+  shape[25] = "func=rect;x=7;y=123;width=12;height=35;angle=346;bc=#666666;pc=#000000;pw=1;"
+  shape[26] = "func=rect;x=103;y=122;width=12;height=35;angle=12;bc=#666666;pc=#000000;pw=1;"
+  shape[27] = "func=rect;x=64;y=240;width=43;height=16;bc=#939393;pc=#000000;pw=1;"
+EndSub
+
+Sub Shapes_Init_Rocket
+  ' Shapes | Initialize shapes data
+  ' return shX, shY - current position of shapes
+  ' return shape - array of shapes
+  shX = 208 ' x offset
+  shY = 154 ' y offset
+  shape = ""
+  shape[1] = "func=tri;x=22;y=0;x1=70;y1=0;x2=0;y2=96;x3=140;y3=96;bc=#752424;pc=#000000;pw=2;"
+  shape[2] = "func=tri;x=0;y=194;x1=21;y1=0;x2=0;y2=79;x3=42;y3=79;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[3] = "func=tri;x=142;y=193;x1=20;y1=0;x2=0;y2=80;x3=41;y3=80;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[4] = "func=tri;x=52;y=189;x1=41;y1=0;x2=0;y2=70;x3=82;y3=70;bc=#1F1F1F;pc=#000000;pw=2;"
+  shape[5] = "func=rect;x=21;y=96;width=143;height=144;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[6] = "func=tri;x=73;y=192;x1=20;y1=0;x2=0;y2=81;x3=41;y3=81;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[7] = "func=ell;x=51;y=101;width=84;height=88;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[8] = "func=ell;x=59;y=110;width=68;height=71;bc=#217DBB;pc=#000000;pw=2;"
+  shape[9] = "func=ell;x=29;y=213;width=15;height=15;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[10] = "func=ell;x=56;y=213;width=15;height=15;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[11] = "func=ell;x=115;y=213;width=15;height=15;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[12] = "func=ell;x=140;y=213;width=15;height=15;bc=#6E6E6E;pc=#000000;pw=2;"
+  shape[13] = "func=ell;x=65;y=278;width=57;height=146;bc=#FF0F0F;pw=0;"
+  shape[14] = "func=ell;x=76;y=286;width=36;height=102;bc=#FF930F;pw=0;"
+  shape[15] = "func=ell;x=85;y=291;width=18;height=50;bc=#FFEF0F;pw=0;"
+EndSub
+
+Sub Shapes_MoveToEntry
+  shp["x"] = Math.Floor(x * 100) / 100
+  shp["y"] = Math.Floor(y * 100) / 100
+EndSub
+
+Sub Shapes_PenToEntry
+  shp["pw"] = pw
+  If 0 < pw Then 
+    shp["pc"] = pc
+  EndIf
+EndSub
+
+Sub Shapes_Restore
+  shape = _shape
+  shX = _shX
+  shY = _shY
+EndSub
+
+Sub Shapes_RotateToEntry
+  If angle <> 0 Then
+    shp["angle"] = Math.Floor(angle * 100) / 100
+  EndIf
+EndSub
+
+Sub Shapes_Save
+  _shape = shape
+  _shX = shX
+  _shY = shY
 EndSub
