@@ -1,0 +1,618 @@
+' Goat
+' Copyright © 2018 Nonki Takahashi.  The MIT License.
+' Program ID JQX127
+
+GraphicsWindow.Title = "Goat"
+SB_Workaround()
+gw = 598
+gh = 428
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+param = "x=0;y=0;width=" + gw + ";height=" + gh + ";angle=90;"
+param = param + "0=#00CCFF;40=#339966;100=#00CC00;"
+FillLinearGradientRectangle()
+scale = 1
+Shapes_Init_Goat1()
+name = "Goat 1"
+Group_Add()
+i = nGroup
+grp = group[i]
+x = grp["x"]
+y = grp["y"] - 20
+Group_Move()
+Shapes_Init_Goat2()
+name = "Goat 2"
+Group_Add()
+i = nGroup
+angle = 20
+Group_Rotate()
+
+Sub FillLinearGradientRectangle
+  ' param["x"], param["y"] - position of the rectangle
+  ' param["width"], param["height"] - size of the rectangle
+  ' param["angle"] - angle of gradient
+  ' param["0"]..param["100"] - 0% to 100% colors
+  x0 = param["x"]
+  y0 = param["y"]
+  width = param["width"]
+  height = param["height"]
+  angle = param["angle"]
+  n = Array.GetItemCount(param)
+  index = Array.GetAllIndices(param)
+  color = ""
+  For i = 1 To n
+    If index[i] + 0 = index[i] And 0 <= index[i] And index[i] <= 100 Then
+      color[index[i]] = param[index[i]]
+    EndIf
+  EndFor
+  If color[0] = "" Then
+    color[0] = GraphicsWindow.BrushColor
+  EndIf
+  If color[100] = "" Then
+    color[100] = GraphicsWindow.BrushColor
+  EndIf
+  n = Array.GetItemCount(color)
+  index = Array.GetAllIndices(color)
+  a45 = Math.Remainder(angle, 45)
+  If 0 <= angle And angle < 45 Then
+    w45 = width
+    h45 = height
+  ElseIf 45 <= angle And angle < 90 Then
+    w45 = height
+    h45 = width
+    a45 = 45 - a45
+  ElseIf 90 <= angle And angle < 135 Then
+    w45 = height
+    h45 = width
+  ElseIf 135 <= angle And angle < 180 Then
+    w45 = width
+    h45 = height
+    a45 = 45 - a45
+  ElseIf 180 <= angle And angle < 225 Then
+    w45 = width
+    h45 = height
+  ElseIf 225 <= angle And angle < 270 Then
+    w45 = height
+    h45 = width
+    a45 = 45 - a45
+  ElseIf 270 <= angle And angle < 315 Then
+    w45 = height
+    h45 = width
+  ElseIf 315 <= angle And angle < 360 Then
+    w45 = width
+    h45 = height
+    a45 = 45 - a45
+  EndIf
+  If a45 = 0 Then
+    For x = 0 To w45
+      percent = Math.Floor(x * 100 / w45)
+      Color_PercentToRGB()
+      x1 = x
+      y1 = 0
+      x2 = x
+      y2 = h45
+      DrawLine()
+    EndFor
+  ElseIf 0 < a45 And a45 <= 45 Then
+    tan = Math.Tan(Math.GetRadians(a45))
+    If h45 <= w45 Then
+      dx = Math.Floor(h45 * tan)
+      For x = 0 To dx
+        percent = Math.Floor(x * 100 / (w45 + dx))
+        Color_PercentToRGB()
+        x1 = x
+        y1 = 0
+        x2 = 0
+        y2 = Math.Floor(x / tan)
+        DrawLine()
+      EndFor
+      For x = dx To w45
+        percent = Math.Floor(x * 100 / (w45 + dx))
+        Color_PercentToRGB()
+        x1 = x
+        y1 = 0
+        x2 = x - dx
+        y2 = h45
+        DrawLine()
+      EndFor
+      For x = w45 To w45 + dx
+        percent = Math.Floor(x * 100 / (w45 + dx))
+        Color_PercentToRGB()
+        x1 = x - dx
+        y1 = h45
+        x2 = w45
+        y2 = Math.Floor((x - w45) / tan)
+        DrawLine()
+      EndFor
+    Else  ' width < height
+      dx = Math.Floor(h45 * tan - w45)
+      dy = Math.Floor(w45 / tan)
+      For x = 0 To w45
+        percent = Math.Floor(x * 100 / (2 * w45 + dx))
+        Color_PercentToRGB()
+        x1 = x
+        y1 = 0
+        x2 = 0
+        y2 = Math.Floor(x / tan)
+        DrawLine()
+      EndFor
+      For x = 0 To dx
+        percent = Math.Floor((x + w45) * 100 / (2 * w45 + dx))
+        Color_PercentToRGB()
+        x1 = w45
+        y1 = Math.Floor(x / tan)
+        x2 = 0
+        y2 = y1 + dy
+        DrawLine()
+      EndFor
+      dy = h45 - Math.Floor(w45 / tan)
+      For x = 0 To w45
+        percent = Math.Floor((x + w45 + dx) * 100 / (2 * w45 + dx))
+        Color_PercentToRGB()
+        x1 = x
+        y1 = h45
+        x2 = w45
+        y2 = dy + Math.Floor(x / tan)
+        DrawLine()
+      EndFor
+    EndIf
+  EndIf
+EndSub
+
+Sub DrawLine
+  ' param r, g, b - red, green blue
+  ' param angle
+  ' param x1, y1, x2, y2 - edges of line
+  GraphicsWindow.PenColor = GraphicsWindow.GetColorFromRGB(r, g, b)
+  If 0 <= angle And angle < 45 Then
+    GraphicsWindow.DrawLine(x1 + x0, y1 + y0, x2 + x0, y2 + y0)
+  ElseIf 45 <= angle And angle < 90 Then
+    GraphicsWindow.DrawLine(y1 + x0, x1 + y0, y2 + x0, x2 + y0)
+  ElseIf 90 <= angle And angle < 135 Then
+    GraphicsWindow.DrawLine(-y1 + x0 + width, x1 + y0, -y2 + x0 + width, x2 + y0)
+  ElseIf 135 <= angle And angle < 180 Then
+    GraphicsWindow.DrawLine(-x1 + x0 + width, y1 + y0, -x2 + x0 + width, y2 + y0)
+  ElseIf 180 <= angle And angle < 225 Then
+    GraphicsWindow.DrawLine(-x1 + x0 + width, -y1 + y0 + height, -x2 + x0 + width, -y2 + y0 + height)
+  ElseIf 225 <= angle And angle < 270 Then
+    GraphicsWindow.DrawLine(-y1 + x0 + width, -x1 + y0 + height, -y2 + x0 + width, -x2 + y0 + height)
+  ElseIf 270 <= angle And angle < 315 Then
+    GraphicsWindow.DrawLine(y1 + x0, -x1 + y0 + height, y2 + x0, -x2 + y0 + height)
+  ElseIf 315 <= angle And angle < 360 Then
+    GraphicsWindow.DrawLine(x1 + x0, -y1 + y0 + height, x2 + x0, -y2 + y0 + height)
+  EndIf
+EndSub
+
+Sub Color_ColorToRGB
+  ' Color | Convert Color to RGB
+  ' param c - color
+  ' returns r, g, b - red, green and blue values
+  If Text.StartsWith(c, "#") Then
+    c = Text.ConvertToUpperCase(c)
+  Else
+    _pc = GraphicsWindow.PenColor
+    GraphicsWindow.PenColor = c
+    c = GraphicsWindow.PenColor
+    GraphicsWindow.PenColor = _pc
+  EndIf
+  hex = Text.GetSubText(c, 2, 2)
+  Math_Hex2Dec()
+  r = dec
+  hex = Text.GetSubText(c, 4, 2)
+  Math_Hex2Dec()
+  g = dec
+  hex = Text.GetSubText(c, 6, 2)
+  Math_Hex2Dec()
+  b = dec
+EndSub
+
+Sub Color_PercentToRGB
+  ' Color | Convert Percent to RGB
+  ' param percent - percent
+  ' param color[] - color table indexed percent
+  ' param n - item count of color[]
+  ' param index[] - all indices of color[]
+  For i = 1 To n
+    p1 = index[i]
+    If index[i] = percent Then
+      p2 = index[i]
+      i = n + 1 ' break
+    ElseIf index[i] < percent And percent < index[i + 1] Then
+      p2 = index[i + 1]
+      i = n + 1 ' break
+    EndIf
+  EndFor
+  c = color[p1]
+  Color_ColorToRGB()
+  If p1 <> p2 Then
+    r1 = r
+    g1 = g
+    b1 = b
+    c = color[p2]
+    Color_ColorToRGB()
+    r2 = r
+    g2 = g
+    b2 = b
+    r = Math.Floor(r1 + (r2 - r1) * (percent - p1) / (p2 - p1))
+    g = Math.Floor(g1 + (g2 - g1) * (percent - p1) / (p2 - p1))
+    b = Math.Floor(b1 + (b2 - b1) * (percent - p1) / (p2 - p1))
+  EndIf
+EndSub
+
+Sub Group_Add
+  ' Group | add shapes To a group
+  ' param name - group name
+  ' param shX, shY, origin of shape array
+  ' param scale - scale of group
+  ' param shape[] - shape array
+  ' param nGroup - number of group
+  ' return nGroup - updated number of group
+  ' return group - group array
+  Stack.PushValue("local", i)
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  nGroup = nGroup + 1
+  grp = ""
+  grp["name"] = name
+  grp["x"] = shX
+  grp["y"] = shY
+  grp["angle"] = 0
+  grp["dir"] = 1
+  Shapes_CalcWidthAndHeight()
+  grp["width"] = shWidth
+  grp["height"] = shHeight
+  s = scale
+  grp["scale"] = s
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    GraphicsWindow.PenWidth = shp["pw"] * s
+    If shp["pw"] > 0 Then
+      GraphicsWindow.PenColor = shp["pc"]
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text|btn", shp["func"]) Then
+      GraphicsWindow.BrushColor = shp["bc"]
+    EndIf
+    If Text.IsSubText("text|btn", shp["func"]) Then
+      If silverlight Then
+        fs = Math.Floor(shp["fs"] * 0.9)
+      Else
+        fs = shp["fs"]
+      EndIf
+      GraphicsWindow.FontSize = fs * s
+      GraphicsWindow.FontName = shp["fn"]
+      If shp["fb"] = "False" Then
+        GraphicsWindow.FontBold = "False"
+      Else
+        GraphicsWindow.FontBold = "True"
+      EndIf
+    EndIf
+    If shp["func"] = "rect" Then
+      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "ell" Then
+      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "tri" Then
+      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
+    ElseIf shp["func"] = "line" Then
+      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
+    ElseIf shp["func"] = "text" Then
+      shp["obj"] = Shapes.AddText(shp["text"])
+    EndIf
+    x = shp["x"]
+    y = shp["y"]
+    shp["rx"] = x
+    shp["ry"] = y
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      alpha = Math.GetRadians(shp["angle"])
+      SB_RotateWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    If shp["func"] = "btn" Then
+      shp["obj"] = Controls.AddButton(shp["caption"], shX + x * s, shY + y * s)
+    Else
+      Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
+      Shapes.Rotate(shp["obj"], shp["angle"])
+    EndIf
+    shape[i] = shp
+  EndFor
+  grp["shape"] = shape
+  group[nGroup] = grp
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  i = Stack.PopValue("local")
+EndSub
+
+Sub Group_Move
+  ' Group | Move a group
+  ' param group[i] - group To move
+  ' param x, y - position To move
+  ' return group[i] - updated group
+  Stack.PushValue("local", j)
+  grp = group[i]
+  s = grp["scale"]
+  grp["x"] = x
+  grp["y"] = y
+  shape = grp["shape"]
+  n = Array.GetItemCount(shape)
+  For j = 1 To n
+    shp = shape[j]
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    Else
+      _x = shp["rx"]
+      _y = shp["ry"]
+    EndIf
+    _w2 = shp["width"] / 2
+    _h2 = shp["height"] / 2
+    Shapes.Move(shp["obj"], grp["x"] + (_x - _w2) * s + _w2, grp["y"]  + (_y - _h2) * s + _h2)
+  EndFor
+  group[i] = grp
+  j = Stack.PopValue("local")
+EndSub
+
+Sub Group_Rotate
+  ' Group | Rotate a group
+  ' param group[i] - group To move
+  ' param cx, cy - rotation center (If given)
+  ' param angle - To rotate
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  Stack.PushValue("local", n)
+  grp = group[i]
+  shape = grp["shape"]
+  moved = "False"
+  If cx <> "" Then
+    moved = "True"
+  Else
+    cx = ""   ' To avoid syntax error
+  EndIf
+  If cy <> "" Then
+    moved = "True"
+  Else
+    cy = ""   ' To avoid syntax error
+  EndIf
+  If moved Then
+    param["x"] = grp["x"]
+    param["y"] = grp["y"]
+    param["cx"] = cx
+    param["cy"] = cy
+    param["width"] = grp["width"]
+    param["height"] = grp["height"]
+    param["scale"] = 1
+    param["angle"] = angle
+    Shapes_CalcRotateZoomPos()
+    grp["x"] = x
+    grp["y"] = y
+  EndIf
+  param["cx"] = grp["width"] / 2
+  param["cy"] = grp["height"] / 2
+  param["scale"] = grp["scale"]
+  grp["angle"] = grp["angle"] + angle
+  param["angle"] = grp["angle"]
+  n = Array.GetItemCount(shape)
+  Stack.PushValue("local", i)
+  For i = 1 To n
+    shp = shape[i]
+    param["x"] = shp["x"]
+    param["y"] = shp["y"]
+    param["width"] = shp["width"]
+    param["height"] = shp["height"]
+    Shapes_CalcRotateZoomPos()
+    shp["rx"] = x
+    shp["ry"] = y
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      alpha = Math.GetRadians(shp["angle"] + grp["angle"])
+      SB_RotateWorkAround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    Shapes.Move(shp["obj"], grp["x"] + x, grp["y"] + y)
+    Shapes.Rotate(shp["obj"], shp["angle"] + grp["angle"])
+    shape[i] = shp
+  EndFor
+  i = Stack.PopValue("local")
+  grp["shape"] = shape
+  group[i] = grp
+  n = Stack.PopValue("local")
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+EndSub
+
+Sub Math_CartesianToPolar
+  ' Math | convert cartesian coodinate To polar coordinate
+  ' param x, y - cartesian coordinate
+  ' return r, a - polar coordinate
+  r = Math.SquareRoot(x * x + y * y)
+  If x = 0 And y > 0 Then
+    a = 90 ' [degree]
+  ElseIf x = 0 And y < 0 Then
+    a = -90
+  ElseIf x = 0 Then
+    a = 0
+  Else
+    a = Math.ArcTan(y / x) * 180 / Math.Pi
+  EndIf
+  If x < 0 Then
+    a = a + 180
+  ElseIf x > 0 And y < 0 Then
+    a = a + 360
+  EndIf
+EndSub
+
+Sub Math_Hex2Dec
+  ' Math | Convert hexadecimal to decimal
+  ' param hex
+  ' returns dec
+  dec = 0
+  len = Text.GetLength(hex)
+  For ptr = 1 To len
+    dec = dec * 16 + Text.GetIndexOf("123456789ABCDEF", Text.GetSubText(hex, ptr, 1))
+  EndFor
+EndSub
+
+Sub Shapes_CalcRotateZoomPos
+  ' Shapes | Calculate position For rotated and zoomed shape
+  ' param["x"], param["y"] - position of a shape
+  ' param["width"], param["height"] - size of a shape
+  ' param ["cx"], param["cy"] - center of rotation
+  ' param ["angle"] - rotate angle
+  ' param ["scale"] - zoom scale
+  ' return x, y - rotated position of a shape
+  _cx = param["x"] + param["width"] / 2
+  _cy = param["y"] + param["height"] / 2
+  x = _cx - param["cx"]
+  y = _cy - param["cy"]
+  Math_CartesianToPolar()
+  a = a + param["angle"]
+  x = r * Math.Cos(a * Math.Pi / 180) * param["scale"]
+  y = r * Math.Sin(a * Math.Pi / 180) * param["scale"]
+  _cx = x + param["cx"]
+  _cy = y + param["cy"]
+  x = _cx - param["width"] / 2
+  y = _cy - param["height"] / 2
+EndSub
+
+Sub Shapes_CalcWidthAndHeight
+  ' Shapes | Calculate total width and height of shapes
+  ' param shape[] - shape array
+  ' return shWidth, shHeight - total size of shapes
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    If shp["func"] = "tri" Or shp["func"] = "line" Then
+      xmin = shp["x1"]
+      xmax = shp["x1"]
+      ymin = shp["y1"]
+      ymax = shp["y1"]
+      If shp["x2"] < xmin Then
+        xmin = shp["x2"]
+      EndIf
+      If xmax < shp["x2"] Then
+        xmax = shp["x2"]
+      EndIf
+      If shp["y2"] < ymin Then
+        ymin = shp["y2"]
+      EndIf
+      If ymax < shp["y2"] Then
+        ymax = shp["y2"]
+      EndIf
+      If shp["func"] = "tri" Then
+        If shp["x3"] < xmin Then
+          xmin = shp["x3"]
+        EndIf
+        If xmax < shp["x3"] Then
+          xmax = shp["x3"]
+        EndIf
+        If shp["y3"] < ymin Then
+          ymin = shp["y3"]
+        EndIf
+        If ymax < shp["y3"] Then
+          ymax = shp["y3"]
+        EndIf
+      EndIf
+      shp["width"] = xmax - xmin
+      shp["height"] = ymax - ymin
+    EndIf
+    If i = 1 Then
+      shWidth = shp["x"] + shp["width"]
+      shHeight = shp["y"] + shp["height"]
+    Else
+      If shWidth < shp["x"] + shp["width"] Then
+        shWidth = shp["x"] + shp["width"]
+      EndIf
+      If shHeight < shp["y"] + shp["height"] Then
+        shHeight = shp["y"] + shp["height"]
+      EndIf
+    EndIf
+    shape[i] = shp
+  EndFor
+EndSub
+
+Sub Shapes_Init_Goat1
+  shX = 299 ' x offset
+  shY = 170 ' y offset
+  shape = ""
+  shape[1] = "func=ell;x=95;y=30;width=35;height=12;angle=30;pw=0;bc=#CCCCCC;"
+  shape[2] = "func=rect;x=45;y=50;width=10;height=120;pw=0;bc=#CCCCCC;"
+  shape[3] = "func=rect;x=85;y=50;width=10;height=120;pw=0;bc=#CCCCCC;"
+  shape[4] = "func=rect;x=20;y=80;width=10;height=120;pw=0;bc=#E5E5E5;"
+  shape[5] = "func=rect;x=60;y=80;width=10;height=120;pw=0;bc=#E5E5E5;"
+  shape[6] = "func=ell;x=0;y=0;width=110;height=120;pw=0;bc=#E5E5E5;"
+EndSub
+
+Sub Shapes_Init_Goat2
+  shX = 236.72 ' x offset
+  shY = 98.69 ' y offset
+  shape = ""
+  shape[1] = "func=ell;x=75.28;y=34.31;width=14;height=14;pw=0;bc=Peru;"
+  shape[2] = "func=ell;x=75.87;y=30.35;width=13.2;height=13.2;pw=0;bc=Peru;"
+  shape[3] = "func=ell;x=76.83;y=26.42;width=12.4;height=12.4;pw=0;bc=Peru;"
+  shape[4] = "func=ell;x=78.18;y=22.56;width=11.6;height=11.6;pw=0;bc=Peru;"
+  shape[5] = "func=ell;x=79.89;y=18.80;width=10.8;height=10.8;pw=0;bc=Peru;"
+  shape[6] = "func=ell;x=81.96;y=15.17;width=10;height=10;pw=0;bc=Peru;"
+  shape[7] = "func=ell;x=84.37;y=11.71;width=9.2;height=9.2;pw=0;bc=Peru;"
+  shape[8] = "func=ell;x=87.12;y=8.43;width=8.4;height=8.4;pw=0;bc=Peru;"
+  shape[9] = "func=ell;x=90.17;y=5.37;width=7.6;height=7.6;pw=0;bc=Peru;"
+  shape[10] = "func=ell;x=93.52;y=2.55;width=6.8;height=6.8;pw=0;bc=Peru;"
+  shape[11] = "func=ell;x=97.14;y=0.00;width=6;height=6;pw=0;bc=Peru;"
+  shape[12] = "func=ell;x=35.28;y=34.31;width=14;height=14;pw=0;bc=Peru;"
+  shape[13] = "func=ell;x=35.48;y=30.35;width=13.2;height=13.2;pw=0;bc=Peru;"
+  shape[14] = "func=ell;x=35.32;y=26.42;width=12.4;height=12.4;pw=0;bc=Peru;"
+  shape[15] = "func=ell;x=34.77;y=22.56;width=11.6;height=11.6;pw=0;bc=Peru;"
+  shape[16] = "func=ell;x=33.86;y=18.80;width=10.8;height=10.8;pw=0;bc=Peru;"
+  shape[17] = "func=ell;x=32.59;y=15.17;width=10;height=10;pw=0;bc=Peru;"
+  shape[18] = "func=ell;x=30.98;y=11.71;width=9.2;height=9.2;pw=0;bc=Peru;"
+  shape[19] = "func=ell;x=29.03;y=8.43;width=8.4;height=8.4;pw=0;bc=Peru;"
+  shape[20] = "func=ell;x=26.78;y=5.37;width=7.6;height=7.6;pw=0;bc=Peru;"
+  shape[21] = "func=ell;x=24.23;y=2.55;width=6.8;height=6.8;pw=0;bc=Peru;"
+  shape[22] = "func=ell;x=21.41;y=0.00;width=6;height=6;pw=0;bc=Peru;"
+  shape[23] = "func=tri;x=72.28;y=81.31;x1=7.5;y1=0;x2=0;y2=40;x3=15;y3=40;angle=150;pw=0;bc=#F2F2F2;"
+  shape[24] = "func=tri;x=72.28;y=93.31;x1=7.5;y1=0;x2=0;y2=40;x3=15;y3=40;angle=150;pw=0;bc=#F2F2F2;"
+  shape[25] = "func=tri;x=72.28;y=105.31;x1=7.5;y1=0;x2=0;y2=40;x3=15;y3=40;angle=150;pw=0;bc=#F2F2F2;"
+  shape[26] = "func=ell;x=52.28;y=111.31;width=20;height=20;angle=180;pw=0;bc=White;"
+  shape[27] = "func=ell;x=72.27;y=41.30;width=20;height=20;angle=180;pw=0;bc=White;"
+  shape[28] = "func=ell;x=32.27;y=41.31;width=20;height=20;angle=180;pw=0;bc=White;"
+  shape[29] = "func=tri;x=42.28;y=51.31;x1=20;y1=0;x2=0;y2=70;x3=40;y3=70;angle=180;pw=0;bc=White;"
+  shape[30] = "func=line;x=62.28;y=51.30;x1=0;y1=70.01;x2=19.99;y2=0.00;pw=20;pc=White;"
+  shape[31] = "func=line;x=42.27;y=51.30;x1=40.00;y1=0.00;x2=0.00;y2=0.01;pw=20;pc=White;"
+  shape[32] = "func=line;x=42.27;y=51.31;x1=0.00;y1=0;x2=20.01;y2=70;pw=20;pc=White;"
+  shape[33] = "func=ell;x=0.00;y=45.31;width=35;height=12;angle=-10;pw=0;bc=White;"
+  shape[34] = "func=ell;x=89.55;y=45.31;width=35;height=12;angle=10;pw=0;bc=White;"
+  shape[35] = "func=ell;x=38.56;y=63.81;width=15;height=15;pw=1;pc=Black;bc=White;"
+  shape[36] = "func=ell;x=70.99;y=63.81;width=15;height=15;pw=1;pc=Black;bc=White;"
+  shape[37] = "func=line;x=38.56;y=71.31;x1=0;y1=0;x2=15;y2=0;angle=-15;pw=1;pc=Black;"
+  shape[38] = "func=line;x=70.99;y=71.31;x1=0;y1=0;x2=15;y2=0;angle=15;pw=1;pc=Black;"
+EndSub
+  
+Sub SB_RotateWorkaround
+  ' Small Basic | Rotate workaround For Silverlight
+  ' param shp - current shape
+  ' param x, y - original coordinate
+  ' param alpha - angle [radian]
+  ' returns x, y - workaround coordinate
+  If shp["func"] = "tri" Then
+    x1 = -Math.Floor(shp["x3"] / 2)
+    y1 = -Math.Floor(shp["y3"] / 2)
+  ElseIf shp["func"] = "line" Then
+    x1 = -Math.Floor(Math.Abs(shp["x1"] - shp["x2"]) / 2)
+    y1 = -Math.Floor(Math.Abs(shp["y1"] - shp["y2"]) / 2)
+  EndIf
+  ox = x - x1
+  oy = y - y1
+  x = x1 * Math.Cos(alpha) - y1 * Math.Sin(alpha) + ox
+  y = x1 * Math.Sin(alpha) + y1 * Math.Cos(alpha) + oy
+EndSub
+
+Sub SB_Workaround
+  ' Small Basic | Workaround For Silverlight
+  ' returns silverlight - "True" If in remote
+  color = GraphicsWindow.GetPixel(0, 0)
+  If Text.GetLength(color) > 7 Then
+    silverlight = "True"
+    msWait = 300
+  Else
+    silverlight = "False"
+  EndIf
+EndSub

@@ -1,0 +1,89 @@
+' Doors Anime
+' Copyright © 2018 Nonki Takahahshi.  The MIT License.
+
+GraphicsWindow.Title = "Doors Anime"
+Init()
+For id = 1 To 3
+  width = 100
+  height = 200
+  x = (gw - width) / 2 + (id - 2) * width * 1.5
+  y = (gh - height) / 2
+  h = 10
+  AddDoor()
+EndFor
+For id = 1 To 3
+  OpenDoor()
+  CloseDoor()
+EndFor
+
+Sub CloseDoor
+  ' param id - door ID
+  For angle = 80 To 0 Step -5
+    Program.Delay(50)
+    FlipDoor()
+  EndFor
+EndSub
+
+Sub AddDoor
+  doorX[id] = x
+  doorY[id] = y
+  GraphicsWindow.BrushColor = "Black"
+  GraphicsWindow.FillRectangle(doorX[id], doorY[id], width, height)
+  GraphicsWindow.BrushColor = "Gray"
+  GraphicsWindow.PenWidth = 0
+  door[id] = Shapes.AddRectangle(width, height)
+  Shapes.Move(door[id], doorX[id], doorY[id])
+  top[id] = Shapes.AddTriangle(0, h, width, 0, width, 2 * h)
+  Shapes.Move(top[id], doorX[id], doorY[id] - h)
+  Shapes.HideShape(top[id])
+  bottom[id] = Shapes.AddTriangle(0, h, width, 0, width, 2 * h)
+  Shapes.Move(bottom[id], doorX[id], doorY[id] + height - h)
+  Shapes.HideShape(bottom[id])
+EndSub
+
+Sub FlipDoor
+  ' param id - door ID
+  ' param angle - 0..90 degree
+  _angle = Math.GetRadians(angle)
+  scaleX = Math.Cos(_angle)
+  scaleY = Math.Sin(_angle)
+  If Math.Abs(scaleY) < 0.001 Then
+    Shapes.HideShape(top[id])
+    Shapes.HideShape(bottom[id])
+  Else
+    Shapes.ShowShape(top[id])
+    Shapes.ShowShape(bottom[id])
+  EndIf
+  If Math.Abs(scaleX) < 0.001 Then
+    Shapes.HideShape(door[id])
+    Shapes.HideShape(top[id])
+    Shapes.HideShape(bottom[id])
+  Else
+    Shapes.ShowShape(door[id])
+    Shapes.ShowShape(top[id])
+    Shapes.ShowShape(bottom[id])
+  EndIf
+  If 0.001 < Math.Abs(scaleX) And 0.001 < Math.Abs(scaleY) Then
+    Shapes.Zoom(door[id], scaleX, 1)
+    Shapes.Move(door[id], doorX[id] + (scaleX - 1) * width / 2, doorY[id])
+    Shapes.Zoom(top[id], scaleX, scaleY)
+    Shapes.Move(top[id], doorX[id] + (scaleX - 1) * width / 2, doorY[id] - h)
+    Shapes.Zoom(bottom[id], scaleX, scaleY)
+    Shapes.Move(bottom[id], doorX[id] + (scaleX - 1) * width / 2, doorY[id] + height - h)
+  EndIf
+EndSub
+
+Sub Init
+  gw = 598
+  gh = 428
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+EndSub
+
+Sub OpenDoor
+  ' param id - door ID
+  For angle = 5 To 85 Step 5
+    Program.Delay(50)
+    FlipDoor()
+  EndFor
+EndSub
