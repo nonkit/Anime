@@ -1,0 +1,313 @@
+' Naruto
+' Copyright © 2018 Nonki Takahashi.  The MIT License.
+' Last update 2018-10-26
+' Program ID PGG341
+
+GraphicsWindow.Title = "Naruto"
+SB_Workaround()
+gw = 598
+gh = 428
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+GraphicsWindow.BackgroundColor = "Peru"
+Shapes_Init()
+name = "Naruto"
+scale = 1
+Group_Add()
+
+Sub Group_Add
+  ' Group | add shapes to a group
+  ' param name - group name
+  ' param shX, shY, origin of shape array
+  ' param scale - scale of group
+  ' param shape[] - shape array
+  ' param nGroup - number of group
+  ' return nGroup - updated number of group
+  ' return group - group array
+  Stack.PushValue("local", i)
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  nGroup = nGroup + 1
+  grp = ""
+  grp["name"] = name
+  grp["x"] = shX
+  grp["y"] = shY
+  grp["angle"] = 0
+  grp["dir"] = 1
+  Shapes_CalcWidthAndHeight()
+  grp["width"] = shWidth
+  grp["cx"] = shWidth / 2
+  grp["height"] = shHeight
+  s = scale
+  grp["scale"] = s
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    GraphicsWindow.PenWidth = shp["pw"] * s
+    If shp["pw"] > 0 Then
+      GraphicsWindow.PenColor = shp["pc"]
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text|btn", shp["func"]) Then
+      GraphicsWindow.BrushColor = shp["bc"]
+    EndIf
+    If Text.IsSubText("text|btn", shp["func"]) Then
+      If silverlight Then
+        fs = Math.Floor(shp["fs"] * 0.9)
+      Else
+        fs = shp["fs"]
+      EndIf
+      GraphicsWindow.FontSize = fs * s
+      GraphicsWindow.FontName = shp["fn"]
+      If shp["fb"] = "False" Then
+        GraphicsWindow.FontBold = "False"
+      Else
+        GraphicsWindow.FontBold = "True"
+      EndIf
+    EndIf
+    If shp["func"] = "rect" Then
+      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "ell" Then
+      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "tri" Then
+      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
+    ElseIf shp["func"] = "line" Then
+      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
+    ElseIf shp["func"] = "text" Then
+      shp["obj"] = Shapes.AddText(shp["text"])
+    EndIf
+    x = shp["x"]
+    y = shp["y"]
+    shp["rx"] = x
+    shp["ry"] = y
+    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      alpha = Math.GetRadians(shp["angle"])
+      SB_RotateWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    If shp["func"] = "btn" Then
+      shp["obj"] = Controls.AddButton(shp["caption"], shX + x * s, shY + y * s)
+    Else
+      Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
+      Shapes.Rotate(shp["obj"], shp["angle"])
+    EndIf
+    shape[i] = shp
+  EndFor
+  grp["shape"] = shape
+  group[nGroup] = grp
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  i = Stack.PopValue("local")
+EndSub
+
+Sub Shapes_CalcWidthAndHeight
+  ' Shapes | Calculate total width and height of shapes
+  ' param shape[] - shape array
+  ' return shWidth, shHeight - total size of shapes
+  For i = i To Array.GetItemCount(shape)
+    shp = shape[i]
+    If shp["func"] = "tri" Or shp["func"] = "line" Then
+      xmin = shp["x1"]
+      xmax = shp["x1"]
+      ymin = shp["y1"]
+      ymax = shp["y1"]
+      If shp["x2"] < xmin Then
+        xmin = shp["x2"]
+      EndIf
+      If xmax < shp["x2"] Then
+        xmax = shp["x2"]
+      EndIf
+      If shp["y2"] < ymin Then
+        ymin = shp["y2"]
+      EndIf
+      If ymax < shp["y2"] Then
+        ymax = shp["y2"]
+      EndIf
+      If shp["func"] = "tri" Then
+        If shp["x3"] < xmin Then
+          xmin = shp["x3"]
+        EndIf
+        If xmax < shp["x3"] Then
+          xmax = shp["x3"]
+        EndIf
+        If shp["y3"] < ymin Then
+          ymin = shp["y3"]
+        EndIf
+        If ymax < shp["y3"] Then
+          ymax = shp["y3"]
+        EndIf
+      EndIf
+      shp["width"] = xmax - xmin
+      shp["height"] = ymax - ymin
+    EndIf
+    If i = 1 Then
+      shWidth = shp["x"] + shp["width"]
+      shHeight = shp["y"] + shp["height"]
+    Else
+      If shWidth < shp["x"] + shp["width"] Then
+        shWidth = shp["x"] + shp["width"]
+      EndIf
+      If shHeight < shp["y"] + shp["height"] Then
+        shHeight = shp["y"] + shp["height"]
+      EndIf
+    EndIf
+    shape[i] = shp
+  EndFor
+EndSub
+
+Sub Shapes_Init
+  shX = 184.05 ' x offset
+  shY = 105.24 ' y offset
+  shape = ""
+  shape[1] = "func=tri;x=93.81;y=10.00;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;pw=0;bc=BurlyWood;"
+  shape[2] = "func=tri;x=140.72;y=22.57;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=30;pw=0;bc=BurlyWood;"
+  shape[3] = "func=tri;x=175.05;y=56.91;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=60;pw=0;bc=BurlyWood;"
+  shape[4] = "func=tri;x=187.62;y=103.81;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=90;pw=0;bc=BurlyWood;"
+  shape[5] = "func=tri;x=175.05;y=150.72;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=120;pw=0;bc=BurlyWood;"
+  shape[6] = "func=tri;x=140.72;y=185.05;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=150;pw=0;bc=BurlyWood;"
+  shape[7] = "func=tri;x=93.81;y=197.62;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=180;pw=0;bc=BurlyWood;"
+  shape[8] = "func=tri;x=46.91;y=185.05;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=210;pw=0;bc=BurlyWood;"
+  shape[9] = "func=tri;x=12.57;y=150.72;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=240;pw=0;bc=BurlyWood;"
+  shape[10] = "func=tri;x=0.00;y=103.81;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=270;pw=0;bc=BurlyWood;"
+  shape[11] = "func=tri;x=12.57;y=56.91;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=300;pw=0;bc=BurlyWood;"
+  shape[12] = "func=tri;x=46.91;y=22.57;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=330;pw=0;bc=BurlyWood;"
+  shape[13] = "func=ell;x=33.30;y=37.11;width=163.29;height=163.29;angle=360;pw=0;bc=BurlyWood;"
+  shape[14] = "func=tri;x=93.81;y=0.00;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=360;pw=0;bc=White;"
+  shape[15] = "func=tri;x=140.72;y=12.57;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=390;pw=0;bc=White;"
+  shape[16] = "func=tri;x=175.05;y=46.91;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=420;pw=0;bc=White;"
+  shape[17] = "func=tri;x=187.62;y=93.81;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=450;pw=0;bc=White;"
+  shape[18] = "func=tri;x=175.05;y=140.72;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=480;pw=0;bc=White;"
+  shape[19] = "func=tri;x=140.72;y=175.05;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=510;pw=0;bc=White;"
+  shape[20] = "func=tri;x=93.81;y=187.62;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=540;pw=0;bc=White;"
+  shape[21] = "func=tri;x=46.91;y=175.05;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=570;pw=0;bc=White;"
+  shape[22] = "func=tri;x=12.57;y=140.72;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=600;pw=0;bc=White;"
+  shape[23] = "func=tri;x=0.00;y=93.81;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=630;pw=0;bc=White;"
+  shape[24] = "func=tri;x=12.57;y=46.91;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=660;pw=0;bc=White;"
+  shape[25] = "func=tri;x=46.91;y=12.57;x1=21.13;y1=0;x2=0;y2=29.88;x3=42.26;y3=29.88;angle=690;pw=0;bc=White;"
+  shape[26] = "func=ell;x=33.30;y=27.11;width=163.29;height=163.29;angle=720;pw=0;bc=White;"
+  shape[27] = "func=ell;x=114.55;y=94.36;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[28] = "func=ell;x=114.72;y=95.59;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[29] = "func=ell;x=114.78;y=96.86;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[30] = "func=ell;x=114.73;y=98.16;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[31] = "func=ell;x=114.57;y=99.46;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[32] = "func=ell;x=114.28;y=100.76;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[33] = "func=ell;x=113.88;y=102.06;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[34] = "func=ell;x=113.36;y=103.33;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[35] = "func=ell;x=112.73;y=104.58;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[36] = "func=ell;x=111.97;y=105.78;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[37] = "func=ell;x=111.10;y=106.93;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[38] = "func=ell;x=110.11;y=108.02;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[39] = "func=ell;x=109.02;y=109.03;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[40] = "func=ell;x=107.82;y=109.96;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[41] = "func=ell;x=106.53;y=110.79;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[42] = "func=ell;x=105.15;y=111.52;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[43] = "func=ell;x=103.68;y=112.14;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[44] = "func=ell;x=102.14;y=112.63;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[45] = "func=ell;x=100.55;y=113.00;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[46] = "func=ell;x=98.89;y=113.22;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[47] = "func=ell;x=97.20;y=113.31;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[48] = "func=ell;x=95.48;y=113.24;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[49] = "func=ell;x=93.75;y=113.02;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[50] = "func=ell;x=92.01;y=112.65;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[51] = "func=ell;x=90.29;y=112.12;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[52] = "func=ell;x=88.59;y=111.43;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[53] = "func=ell;x=86.94;y=110.57;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[54] = "func=ell;x=85.33;y=109.57;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[55] = "func=ell;x=83.80;y=108.40;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[56] = "func=ell;x=82.35;y=107.09;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[57] = "func=ell;x=81.00;y=105.64;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[58] = "func=ell;x=79.77;y=104.04;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[59] = "func=ell;x=78.66;y=102.32;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[60] = "func=ell;x=77.68;y=100.48;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[61] = "func=ell;x=76.86;y=98.53;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[62] = "func=ell;x=76.21;y=96.48;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[63] = "func=ell;x=75.72;y=94.36;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[64] = "func=ell;x=75.42;y=92.16;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[65] = "func=ell;x=75.31;y=89.90;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[66] = "func=ell;x=75.39;y=87.62;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[67] = "func=ell;x=75.68;y=85.31;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[68] = "func=ell;x=76.18;y=82.99;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[69] = "func=ell;x=76.89;y=80.70;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[70] = "func=ell;x=77.81;y=78.44;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[71] = "func=ell;x=78.95;y=76.23;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[72] = "func=ell;x=80.29;y=74.10;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[73] = "func=ell;x=81.84;y=72.06;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[74] = "func=ell;x=83.58;y=70.13;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[75] = "func=ell;x=85.52;y=68.33;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[76] = "func=ell;x=87.64;y=66.69;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[77] = "func=ell;x=89.94;y=65.21;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[78] = "func=ell;x=92.39;y=63.91;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[79] = "func=ell;x=94.98;y=62.82;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[80] = "func=ell;x=97.71;y=61.94;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[81] = "func=ell;x=100.54;y=61.30;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[82] = "func=ell;x=103.47;y=60.90;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[83] = "func=ell;x=106.47;y=60.75;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[84] = "func=ell;x=109.52;y=60.86;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[85] = "func=ell;x=112.59;y=61.25;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[86] = "func=ell;x=115.67;y=61.91;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[87] = "func=ell;x=118.73;y=62.86;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[88] = "func=ell;x=121.74;y=64.09;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[89] = "func=ell;x=124.68;y=65.59;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[90] = "func=ell;x=127.52;y=67.38;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[91] = "func=ell;x=130.24;y=69.44;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[92] = "func=ell;x=132.80;y=71.77;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[93] = "func=ell;x=135.20;y=74.35;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[94] = "func=ell;x=137.39;y=77.17;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[95] = "func=ell;x=139.36;y=80.23;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[96] = "func=ell;x=141.08;y=83.49;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[97] = "func=ell;x=142.54;y=86.95;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[98] = "func=ell;x=143.70;y=90.58;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[99] = "func=ell;x=144.56;y=94.35;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[100] = "func=ell;x=145.10;y=98.25;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[101] = "func=ell;x=145.30;y=102.25;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[102] = "func=ell;x=145.14;y=106.30;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[103] = "func=ell;x=144.63;y=110.40;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[104] = "func=ell;x=143.74;y=114.50;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[105] = "func=ell;x=142.48;y=118.57;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[106] = "func=ell;x=140.85;y=122.58;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[107] = "func=ell;x=138.84;y=126.49;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[108] = "func=ell;x=136.46;y=130.27;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[109] = "func=ell;x=133.72;y=133.89;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[110] = "func=ell;x=130.62;y=137.31;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[111] = "func=ell;x=127.18;y=140.50;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[112] = "func=ell;x=123.42;y=143.42;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[113] = "func=ell;x=119.36;y=146.04;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[114] = "func=ell;x=115.01;y=148.33;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[115] = "func=ell;x=110.40;y=150.27;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[116] = "func=ell;x=105.57;y=151.83;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[117] = "func=ell;x=100.55;y=152.97;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[118] = "func=ell;x=95.35;y=153.68;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+  shape[119] = "func=ell;x=90.04;y=153.95;width=12;height=12;angle=720;pw=0;bc=Magenta;"
+EndSub
+
+Sub SB_RotateWorkaround
+  ' Small Basic | Rotate workaround for Silverlight
+  ' param shp - current shape
+  ' param x, y - original coordinate
+  ' param alpha - angle [radian]
+  ' returns x, y - workaround coordinate
+  If shp["func"] = "tri" Then
+    x1 = -Math.Floor(shp["x3"] / 2)
+    y1 = -Math.Floor(shp["y3"] / 2)
+  ElseIf shp["func"] = "line" Then
+    x1 = -Math.Floor(Math.Abs(shp["x1"] - shp["x2"]) / 2)
+    y1 = -Math.Floor(Math.Abs(shp["y1"] - shp["y2"]) / 2)
+  EndIf
+  ox = x - x1
+  oy = y - y1
+  x = x1 * Math.Cos(alpha) - y1 * Math.Sin(alpha) + ox
+  y = x1 * Math.Sin(alpha) + y1 * Math.Cos(alpha) + oy
+EndSub
+  
+Sub SB_Workaround
+  ' Small Basic | Workaround for Silverlight
+  ' returns silverlight - "True" if in remote
+  color = GraphicsWindow.GetPixel(0, 0)
+  If Text.GetLength(color) > 7 Then
+    silverlight = "True"
+    msWait = 300
+  Else
+    silverlight = "False"
+  EndIf
+EndSub
