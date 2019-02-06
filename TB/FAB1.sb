@@ -1,0 +1,71 @@
+' FAB1
+' Copyright © 2016 Nonki Takahashi.  The MIT License.
+' Program ID TJD054
+
+GraphicsWindow.Title = "FAB1"
+Init()
+' ground
+GraphicsWindow.BrushColor = "Gray"
+GraphicsWindow.FillRectangle(0, 400, gw, gh - 400)
+' tail lump
+GraphicsWindow.BrushColor = "#99FF0000"
+GraphicsWindow.FillEllipse(675, 250, 50, 50)
+' light
+GraphicsWindow.BrushColor = "#99FFFFFF"
+GraphicsWindow.FillEllipse(100, 250, 50, 50)
+' top
+GraphicsWindow.FillEllipse(400, 150, 250, 200)
+GraphicsWindow.BrushColor = "HotPink"
+GraphicsWindow.FillRectangle(480, 150, 20, 100)
+' body
+GraphicsWindow.FillTriangle(100, 250, 150, 250, 150, 350)
+GraphicsWindow.FillRectangle(150, 250, 550, 100)
+GraphicsWindow.FillTriangle(700, 250, 700, 350, 750, 350)
+GraphicsWindow.BrushColor = "#800040"
+GraphicsWindow.FillRectangle(200, 300, 220, 50)
+GraphicsWindow.FillRectangle(550, 300, 100, 50)
+' wheels
+GraphicsWindow.BrushColor = "#222222"
+GraphicsWindow.FillEllipse(200, 300, 100, 100)
+GraphicsWindow.FillEllipse(320, 300, 100, 100)
+GraphicsWindow.FillEllipse(550, 300, 100, 100)
+GraphicsWindow.BrushColor = "#999999"
+GraphicsWindow.FillEllipse(220, 320, 60, 60)
+GraphicsWindow.FillEllipse(340, 320, 60, 60)
+GraphicsWindow.FillEllipse(570, 320, 60, 60)
+' bonnet mascot
+GraphicsWindow.FillEllipse(100, 230, 30, 10)
+GraphicsWindow.FillTriangle(115, 235, 110, 250, 120, 250)
+' bumpers
+GraphicsWindow.FillRectangle(130, 330, 70, 20)
+GraphicsWindow.FillRectangle(650, 330, 100, 20)
+
+Sub Init
+  gw = 800
+  gh = 428
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+  GraphicsWindow.BackgroundColor = "SkyBlue"
+  GraphicsWindow.BrushColor = "Gray"
+  DrawGrid()
+  GraphicsWindow.PenWidth = 0
+EndSub
+
+Sub DrawGrid
+  GraphicsWindow.PenColor = "#CCCCCC"
+  For y = 0 To gh Step 50
+    GraphicsWindow.DrawLine(0, y, gw, y)
+  EndFor
+  For x = 0 To gw Step 50
+    GraphicsWindow.DrawLine(x, 0, x, gh)
+  EndFor
+  GraphicsWindow.PenColor = "#999999"
+  For y = 0 To gh Step 100
+    GraphicsWindow.DrawLine(0, y, gw, y)
+      GraphicsWindow.DrawText(2, y + 2, y)
+  EndFor
+  For x = 0 To gw Step 100
+    GraphicsWindow.DrawLine(x, 0, x, gh)
+      GraphicsWindow.DrawText(x + 2, 2, x)
+  EndFor
+EndSub
