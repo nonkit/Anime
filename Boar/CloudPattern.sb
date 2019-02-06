@@ -1,0 +1,48 @@
+' Cloud Pattern (雲文)
+' Copyright © 2018 Nonki Takahashi.  The MIT License.
+' Last update 2018-10-31
+' Program ID JLL290-0
+
+GraphicsWindow.Title = "Cloud Pattern"
+gw = 598
+gh = 428
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+ox = gw / 2
+oy = gh / 2
+π = Math.Pi
+k = 20
+r2 = 20
+dθ = 1
+_dθ = dθ * π　/ 180
+a = k * _dθ
+For θ = 0 To 360 * 3 Step dθ
+  _θ = θ * π / 180
+  ' Archimedes'spiral
+  r = k * _θ
+  x2 = ox + r * Math.Cos(_θ)
+  y2 = oy - r * Math.Sin(_θ)
+  b = 2 * k * _θ　* Math.Sin(_dθ / 2)
+  ds = Math.SquareRoot(a * a + b * b - 2 * a * b * Math.Cos((π + _dθ) / 2))
+  s = s + ds
+  _α = s / r2
+  _Δ = Math.ArcSin(b / Math.Sin((π + _dθ) / 2) / ds)
+  b2 = 2 * k * (_θ　+　_dθ) * Math.Sin(_dθ / 2)
+  ds2 = Math.SquareRoot(a * a + b2 * b2 - 2 * a * b2 * Math.Cos((π + _dθ) / 2))
+  _γ2 = Math.ArcSin(k * _dθ / Math.Sin((π + _dθ) / 2) / ds2)
+  _ε = (π - (π - _dθ) / 2 - _Δ - _γ2) / 2
+  _β = π / 2 - _ε - _Δ
+  ' + cycloid
+  x4 = x2　+ r2 * Math.Cos(_θ - _β) + r2 * Math.Cos(_θ - _β - _α)
+  y4 = y2 - r2 * Math.Sin(_θ - _β) + r2 * Math.Sin(_θ - _β - _α)
+  If 0 < θ Then
+    GraphicsWindow.PenColor = "#11000000"
+    GraphicsWindow.DrawLine(x1, y1, x2, y2)
+    GraphicsWindow.PenColor = "Black"
+    GraphicsWindow.DrawLine(x3, y3, x4, y4)
+  EndIf
+  x1 = x2
+  y1 = y2
+  x3 = x4
+  y3 = y4
+EndFor
