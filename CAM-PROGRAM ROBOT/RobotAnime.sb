@@ -1,7 +1,9 @@
 ' Robot Animation
-' Version 0.1
+' Version 0.2
 ' Copyright © 2019 Nonki Takahashi.  The MIT Licnese.
+' Last update 2019-05-19
 
+Not = "True=False;False=True;"
 SB_Workaround()
 param = ""
 LF = Text.GetCharacter(10)
@@ -14,25 +16,26 @@ GW_DrawGrid()
 Shapes_Init_Robot()
 name = "Robot"
 Group_Add()
-If "True" Then
-  i = nGroup
-  x = 100
-  For y = 205 To 100 Step -5
-    Group_Move()
-    Program.Delay(100)
-  EndFor
-  For angle = 5 To 90 Step 5
-    Group_Rotate()
-    Program.Delay(100)
-  EndFor
-  grp = group[i]
-  gx = grp["x"]
-  y = grp["y"]
-  For x = gx + 5 To gx + 5 Step 5
-    Group_Move()
-    Program.Delay(100)
-  EndFor
-EndIf
+i = nGroup
+' move 100
+x = 100
+For y = 205 To 100 Step -5
+  Group_Move()
+  Program.Delay(100)
+EndFor
+' turn 90
+For angle = 5 To 90 Step 5
+  Group_Rotate()
+  Program.Delay(100)
+EndFor
+' move 200
+grp = group[i]
+gx = grp["x"]
+y = grp["y"]
+For x = gx + 5 To gx + 205 Step 5
+  Group_Move()
+  Program.Delay(100)
+EndFor
 
 Sub GW_DrawGrid
   ' GraphicsWindow | draw grid
@@ -121,7 +124,10 @@ Sub Group_Add
     y = shp["y"]
     shp["rx"] = x
     shp["ry"] = y
-    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+    If sbd And (shp["func"] = "line") Then
+      shp["wx"] = x
+      shp["wy"] = y
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
       alpha = Math.GetRadians(shp["angle"])
       SB_RotateWorkaround()
       shp["wx"] = x
@@ -145,9 +151,9 @@ Sub Group_Add
 EndSub
 
 Sub Group_Move
-  ' Group | Move a group
-  ' param group[i] - group To move
-  ' param x, y - position To move
+  ' Group | move a group
+  ' param group[i] - group to move
+  ' param x, y - position to move
   ' return group[i] - updated group
   Stack.PushValue("local", j)
   grp = group[i]
@@ -158,7 +164,10 @@ Sub Group_Move
   n = Array.GetItemCount(shape)
   For j = 1 To n
     shp = shape[j]
-    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+    If sbd And (shp["func"] = "line") Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
       _x = shp["wx"]
       _y = shp["wy"]
     Else
@@ -223,8 +232,18 @@ Sub Group_Rotate
     Shapes_CalcRotateZoomPos()
     shp["rx"] = x
     shp["ry"] = y
-    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
-      alpha = Math.GetRadians(shp["angle"] + grp["angle"])
+    alpha = shp["angle"] + grp["angle"]
+    If sbd And (shp["func"] = "line") And (alpha <> 0) Then
+      x1 = shp["x1"]
+      y1 = shp["y1"]
+      x2 = shp["x2"]
+      y2 = shp["y2"]
+      pw = shp["pw"]
+      SB_LineWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _alpha = Math.GetRadians(alpha)
       SB_RotateWorkAround()
       shp["wx"] = x
       shp["wy"] = y
@@ -242,7 +261,7 @@ Sub Group_Rotate
 EndSub
 
 Sub Math_CartesianToPolar
-  ' Math | convert cartesian coodinate To polar coordinate
+  ' Math | convert cartesian coodinate to polar coordinate
   ' param x, y - cartesian coordinate
   ' return r, a - polar coordinate
   r = Math.SquareRoot(x * x + y * y)
@@ -262,11 +281,34 @@ Sub Math_CartesianToPolar
   EndIf
 EndSub
 
+Sub SB_LineWorkaround
+  ' Small Basic | line rotate workaround for SBD
+  ' param x, y - coordinate of the position of the line
+  ' param x1, y1 - coordinate of the first point
+  ' param x2, y2 - coordinate of the second point
+  ' param pw - pen width
+  ' param alpha - to rotate [degree]
+  ' return x, y - workaround value for the coordinate
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  x = x1 - x2
+  y = y1 - y2
+  Math_CartesianToPolar()
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  _a = Math.GetRadians(a)
+  _alpha = Math.GetRadians(a - alpha)
+  Δx = pw / 4 * (Math.Sin(_alpha) - Math.Sin(_a))
+  Δy = pw / 4 * (Math.Cos(_alpha) - Math.Cos(_a))
+  x = x - Δx
+  y = y - Δy
+EndSub
+
 Sub SB_RotateWorkaround
-  ' Small Basic | Rotate workaround For Silverlight
+  ' Small Basic | rotate workaround for Silverlight
   ' param shp - current shape
   ' param x, y - original coordinate
-  ' param alpha - angle [radian]
+  ' param _alpha - angle [radian]
   ' returns x, y - workaround coordinate
   If shp["func"] = "tri" Then
     x1 = -Math.Floor(shp["x3"] / 2)
@@ -277,24 +319,31 @@ Sub SB_RotateWorkaround
   EndIf
   ox = x - x1
   oy = y - y1
-  x = x1 * Math.Cos(alpha) - y1 * Math.Sin(alpha) + ox
-  y = x1 * Math.Sin(alpha) + y1 * Math.Cos(alpha) + oy
+  x = x1 * Math.Cos(_alpha) - y1 * Math.Sin(_alpha) + ox
+  y = x1 * Math.Sin(_alpha) + y1 * Math.Cos(_alpha) + oy
 EndSub
 
 Sub SB_Workaround
-  ' Small Basic | Workaround for Silverlight
-  ' returns silverlight - "True" if in remote
+  ' Small Basic | workaround for Silverlight / SBD
+  ' return silverlight - "True" if in remote
+  ' return sbd - "True" if in Small Basic Desktop
   color = GraphicsWindow.GetPixel(0, 0)
+  sbd = "False"
   If Text.GetLength(color) > 7 Then
     silverlight = "True"
     msWait = 300
   Else
     silverlight = "False"
+    gw = GraphicsWindow.Width
+    gh = GraphicsWindow.Height
+    If (gw = 624) And (gh = 441) Then
+      sbd = "True"
+    EndIf
   EndIf
 EndSub
 
 Sub Shapes_CalcRotateZoomPos
-  ' Shapes | Calculate position For rotated and zoomed shape
+  ' Shapes | calculate position for rotated and zoomed shape
   ' param["x"], param["y"] - position of a shape
   ' param["width"], param["height"] - size of a shape
   ' param ["cx"], param["cy"] - center of rotation
@@ -316,7 +365,7 @@ Sub Shapes_CalcRotateZoomPos
 EndSub
 
 Sub Shapes_CalcWidthAndHeight
-  ' Shapes | Calculate total width and height of shapes
+  ' Shapes | calculate total width and height of shapes
   ' param shape[] - shape array
   ' return shWidth, shHeight - total size of shapes
   For i = 1 To Array.GetItemCount(shape)
@@ -371,7 +420,7 @@ Sub Shapes_CalcWidthAndHeight
 EndSub
 
 Sub Shapes_Init_Robot
-  ' Shapes | Initialize shapes data
+  ' Shapes | initialize shapes data
   ' return shX, shY - current position of shapes
   ' return shape - array of shapes
   shX = 100 '241 ' x offset
@@ -465,7 +514,4 @@ Sub Shapes_Init_Robot
   shape[86] = "func=line;x=99;y=0;x1=0;y1=0;x2=0;y2=75;pw=5;pc=#FF0066FF;"
   shape[87] = "func=line;x=94;y=0;x1=0;y1=0;x2=0;y2=17;pw=3;pc=#FF0066FF;"
   shape[88] = "func=line;x=104;y=0;x1=0;y1=0;x2=0;y2=17;pw=3;pc=#FF0066FF;"
-  shape[89] = "func=rect;x=-2;y=0;width=120;height=132;pw=0;bc=#99FF0000;"
-  shape[90] = "func=line;x=58;y=0;x1=0;y1=0;x2=0;y2=132;pw=120;pc=#990000FF;"
 EndSub
-  
