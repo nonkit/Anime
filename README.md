@@ -15,7 +15,7 @@ Following files are main source.  Subfolders contain output samples.
 
 ## See Also
 
-- [Wiki](Wiki) (documents)
+- [Wiki](http://github.com/nonkit/Anime/wiki) (documents)
 - [Shapes](http://github.com/nonkit/Shapes) (sprite editor)
 
 ## Other Resources
