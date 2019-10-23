@@ -1,7 +1,8 @@
 ' Robot Animation
-' Version 0.2
+' Version 0.3
 ' Copyright © 2019 Nonki Takahashi.  The MIT Licnese.
-' Last update 2019-05-19
+' Last update 2019-09-28
+' Program ID NQH136-0
 
 Not = "True=False;False=True;"
 SB_Workaround()
@@ -49,7 +50,7 @@ Sub GW_DrawGrid
     Else
       GraphicsWindow.PenColor = _c10
     EndIf
-    GraphicsWindow.DrawLine(_x, 0, _x, gh)
+    GraphicsWindow.DrawLine(_x, 0, _x, _gh)
   EndFor
   For _y = 0 To _gh Step 10
     If Math.Remainder(_y / 10, 10) = 0 Then
@@ -57,7 +58,7 @@ Sub GW_DrawGrid
     Else
       GraphicsWindow.PenColor = _c10
     EndIf
-    GraphicsWindow.DrawLine(0, _y, gw, _y)
+    GraphicsWindow.DrawLine(0, _y, _gw, _y)
   EndFor
 EndSub
 

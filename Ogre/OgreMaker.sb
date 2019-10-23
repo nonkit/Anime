@@ -1,0 +1,703 @@
+' Ogre Maker - Shapes Generator
+' Version 0.1
+' Copyright © 2019 Nonki Takahashi.  The MIT License.
+' Last update 2019-01-27
+
+GraphicsWindow.Title = "Ogre Maker 0.1"
+Init()
+' ears
+pw = 4
+pc = "DarkRed"
+bc = "Red"
+x = 180
+y = 120
+width = 40
+height = 40
+Shapes_AddEllipse()
+x = 330
+Shapes_AddEllipse()
+pw = 4
+x = 180 + 20
+y = 120 + 20
+ra = 10
+a1 = 180
+a2 = 360
+da = 10
+Shapes_AddArc()
+x = 330 + 20
+Shapes_AddArc()
+' face
+x = 200
+y = 90
+width = 150
+height = 100
+br = 20
+Shapes_AddRoundRectangle()
+' hair 1
+color = "Green"
+cl[3] = color
+rate = 0.4
+Color_Blacken()
+cl[2] = color
+color = "Green"
+rate = 0.6
+Color_Blacken()
+cl[1] = color
+pw = 0
+cr = "1=12;2=8;3=4;"
+cx = "1=208;2=217;3=231;4=241;5=258;"
+cy = "1=92;2=87;3=95;4=96;5=90;"
+cx = cx + "6=260;7=274;8=282;9=291;10=304;11=315;12=329;13=340;"
+cy = cy + "6=87;7=83;8=86;9=83;10=89;11=96;12=86;13=93;"
+For i = 1 To Array.GetItemCount(cx)
+  For j = 1 To Array.GetItemCount(cr)
+    bc = cl[j]
+    x = cx[i] - cr[j]
+    y = cy[i] - cr[j]
+    width = 2 * cr[j]
+    height = 2 * cr[j] 
+    Shapes_AddEllipse()
+  EndFor
+EndFor
+' horns
+pw = 4
+pc = "DarkGoldenrod"
+bc = "Gold"
+x = 225
+y = 40
+x1 = 10
+y1 = 0
+x2 = 0
+y2 = 50
+x3 = 20
+y3 = 50
+Shapes_AddTriangle()
+x = 300
+Shapes_AddTriangle()
+' hair 2
+pw = 0
+cx = "1=221;2=239;3=244;4=298;5=319;"
+cy = "1=86;2=93;3=86;4=91;5=85;"
+For i = 1 To Array.GetItemCount(cx)
+  For j = 1 To Array.GetItemCount(cr)
+    bc = cl[j]
+    x = cx[i] - cr[j]
+    y = cy[i] - cr[j]
+    width = 2 * cr[j]
+    height = 2 * cr[j] 
+    Shapes_AddEllipse()
+  EndFor
+EndFor
+' cheeks
+pw = 4
+pc = "DarkRed"
+bc = "#CC0000"
+x = 195
+y = 114
+width = 75
+height = 50
+angle = 0
+Shapes_AddEllipse()
+x = 280
+Shapes_AddEllipse()
+' eys
+pw = 4
+pc = "Black"
+bc = "#333333"
+x = 220
+y = 115
+width = 45
+height = 30
+angle = 10
+Shapes_AddEllipse()
+x = 285
+angle = -10
+Shapes_AddEllipse()
+pw = 5
+pc = "Goldenrod"
+bc = "Black"
+x = 240
+y = 121
+width = 18
+height = 18
+angle = 0
+Shapes_AddEllipse()
+x = 292
+Shapes_AddEllipse()
+' eyebrows
+pw = 0
+bc = "#001100"
+ox = 245
+oy = 118
+x1 = 10
+y1 = 0
+x2 = 0
+y2 = 20
+x3 = 20
+y3 = 20
+angle = 10
+_angle = Math.GetRadians(angle)
+For i = 1 To 6
+  _x = -30 + (i - 1) * 10
+  x = ox + _x * Math.Cos(_angle) - x1 
+  y = oy + _x * Math.Sin(_angle) - y2 / 2
+  Shapes_AddTriangle()
+EndFor
+ox = 305
+angle = -10
+_angle = Math.GetRadians(angle)
+For i = 1 To 6
+  _x = -20 + (i - 1) * 10
+  x = ox + _x * Math.Cos(_angle) - x1 
+  y = oy + _x * Math.Sin(_angle) - y2 / 2
+  Shapes_AddTriangle()
+EndFor
+pw = 4
+pc = "DarkRed"
+x = 275
+y = 114
+x1 = 0
+y1 = 0
+x2 = 0
+y2 = 18
+angle = 0
+Shapes_AddLine()
+' mouth
+pw = 0
+bc = "DarkRed"
+x = 215
+y = 165
+width = 120
+height = 15
+br = 5
+angle = 0
+Shapes_AddRoundRectangle()
+pw = 2
+pc = "Tan"
+bc = "White"
+x = 225
+y = 158
+x1 = 5
+y1 = 0
+x2 = 0
+y2 = 18
+x3 = 10
+y3 = 18
+Shapes_AddTriangle()
+x = 315
+Shapes_AddTriangle()
+angle = 180
+x = 240
+y = 166
+x1 = 5
+y1 = 0
+x2 = 0
+y2 = 6
+x3 = 10
+y3 = 6
+Shapes_AddTriangle()
+x = 298
+Shapes_AddTriangle()
+angle = 0
+x = 258
+y = 170
+x1 = 5
+y1 = 0
+x2 = 0
+y2 = 6
+x3 = 10
+y3 = 6
+Shapes_AddTriangle()
+x = 282
+Shapes_AddTriangle()
+' Nose
+pw = 3
+pc = "DarkRed"
+bc = "FireBrick"
+x = 250
+y = 142
+width = 20
+height = 20
+Shapes_AddEllipse()
+x = 280
+Shapes_AddEllipse()
+x = 263
+y = 140
+width = 24
+height = 24
+Shapes_AddEllipse()
+Shapes_Normalize()
+Shapes_DumpArray()
+
+Sub Init
+  gw = 598
+  gh = 428
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+  ox = gw / 2
+  oy = gh / 2
+  iMin = 1
+  iMax = iMin - 1
+  pc = ""
+  pw = 0
+  bc = ""
+  x = 0
+  y = 0
+  width = 0
+  height = 0
+  x1 = 0
+  y1 = 0
+  x2 = 0
+  y2 = 0
+  x3 = 0
+  y3 = 0
+  angle = 0
+  fs = 12
+  fn = "Trebuchet MS"
+  fb = "False"
+  fi = "False"
+  txt = ""
+  ' initialization For naruto
+  sqr2 = Math.SquareRoot(2)
+EndSub
+
+Sub Color_Blacken
+  ' Color | Blacken given color
+  ' param color - given color
+  ' param rate - 0..1
+  ' return color - color blackened
+  Color_NameToColor()
+  Color_ColorToRGB()
+  r = Math.Floor(r * (1 - rate))
+  g = Math.Floor(g * (1 - rate))
+  b = Math.Floor(b * (1 - rate))
+  color = GraphicsWindow.GetColorFromRGB(r, g, b)
+EndSub
+
+Sub Color_ColorToRGB
+  ' Color | Convert color To RGB values
+  ' param color - "#rrggbb" (hexadecimal values)
+  ' return r, g, b - RGB values 0..255
+  sR = Text.GetSubText(color, 2, 2)
+  sG = Text.GetSubText(color, 4, 2)
+  sB = Text.GetSubText(color, 6, 2)
+  hex = sR
+  Math_Hex2Dec()
+  r = dec
+  hex = sG
+  Math_Hex2Dec()
+  g = dec
+  hex = sB
+  Math_Hex2Dec()
+  b = dec
+EndSub
+
+Sub Color_NameToColor
+  ' Color | Convert color name To color
+  ' param color - color name
+  ' return color -"#rrggbb"
+  If Text.StartsWith(color, "#") Then
+    color = Text.ConvertToUpperCase(color)
+  Else
+    bc = GraphicsWindow.BrushColor
+    GraphicsWindow.BrushColor = color
+    color = GraphicsWindow.BrushColor
+    GraphicsWindow.BrushColor = bc
+  EndIf
+EndSub
+
+Sub Math_Hex2Dec
+  ' Math | Convert hexadecimal To decimal
+  ' param hex
+  ' return dec
+  dec = 0
+  len = Text.GetLength(hex)
+  For ptr = 1 To len
+    dec = dec * 16 + Text.GetIndexOf("123456789ABCDEF", Text.GetSubText(hex, ptr, 1))
+  EndFor
+EndSub
+
+Sub Shapes_AddArc
+  ' Shapes | Add arc
+  ' pc - pen color
+  ' pw - pen width [px]
+  ' x - center x coordinate [px]
+  ' y - center y coordinate [px]
+  ' ra - radius [px]
+  ' a1 - start angle [°]
+  ' a2 - end angle [°]
+  ' da - delta (step) angle [°]
+  ' ct - cap type ("Round" for round, otherwise for flat)
+  __pw = pw
+  __bc = bc
+  __width = width
+  __height = height
+  __x = x
+  __y = y
+  bc = pc
+  For a = a1 To a2 Step da
+    _a = Math.GetRadians(a)
+    x2 = __x + ra * Math.Cos(_a)
+    y2 = __y + ra * Math.Sin(_a)
+    If a1 < a Then
+      pw = _pw
+      x = 0
+      y = 0
+      Shapes_AddLine()
+    EndIf
+    If ((a1 < a) And (a < a2)) Or (Text.ConvertToLowerCase(ct) = "round") Then
+      pw = 0
+      x = x2 - __pw / 2
+      y = y2 - __pw / 2
+      width = __pw
+      height = __pw
+      Shapes_AddEllipse()
+    EndIf
+    x1 = x2
+    y1 = y2
+  EndFor
+  bc = __bc
+  pw = __pw
+  x = __x
+  y = __y
+  width = __width
+  height = __height
+EndSub  
+
+Sub Shapes_AddEllipse
+  ' Shapes | Add ellipse
+  ' param x, y - top left position
+  ' param width
+  ' param height
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  func = "ell"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddLine
+  ' Shapes | Add line
+  ' param x1, y1 - first point
+  ' param x2, y2 - second point
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  func = "line"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddRectangle
+  ' Shapes | Add rectangle
+  ' param x, y - top left position
+  ' param width
+  ' param height
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  func = "rect"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddRoundRectangle
+  ' Shapes | Add round rectangle
+  ' param x, y - top left position
+  ' param width
+  ' param height
+  ' param br - border radius
+  _r = br
+  If (width / 2 < _r) Or (height / 2 < _r) Then
+    _r = Math.Min(width / 2, height / 2)
+  EndIf
+  _pw = pw
+  pw = 0
+  _x = x
+  _y = y
+  _width = width
+  _height = height
+  width = 2 * _r
+  height = 2 * _r
+  Shapes_AddEllipse()
+  x = _x + _width - 2 * _r
+  Shapes_AddEllipse()
+  y = _y + _height - 2 * _r
+  Shapes_AddEllipse()
+  x = _x
+  Shapes_AddEllipse()
+  x = _x + _r
+  y = _y
+  width = _width - 2 * _r
+  height = _height
+  Shapes_AddRectangle()
+  x = _x
+  y = _y + _r
+  width = _width
+  height = _height - 2 * _r
+  Shapes_AddRectangle()
+  pw = _pw
+  If 0 < pw Then
+    x = 0
+    y = 0
+    x1 = _x + _r
+    y1 = _y + pw / 2
+    x2 = _x + _width - _r
+    y2 = _y + pw / 2
+    Shapes_AddLine()
+    x1 = _x + _r
+    y1 = _y + _height - pw / 2
+    x2 = _x + _width - _r
+    y2 = _y + _height - pw / 2
+    Shapes_AddLine()
+    x1 = _x + pw / 2
+    y1 = _y + _r
+    x2 = _x + pw / 2
+    y2 = _y + _height - _r
+    Shapes_AddLine()
+    x1 = _x + _width - pw / 2
+    y1 = _y + _r
+    x2 = _x + _width - pw / 2
+    y2 = _y + _height - _r
+    Shapes_AddLine()
+    da = 30
+    x = _x + _width - _r
+    y = _y + _height - _r
+    ra = _r - pw / 2
+    a1 = 0
+    a2 = 90
+    ct = "Round"
+    Shapes_AddArc()
+    x = _x + _r
+    a1 = 90
+    a2 = 180
+    Shapes_AddArc()
+    y = _y + _r
+    a1 = 180
+    a2 = 270
+    Shapes_AddArc()
+    x = _x + _width - _r
+    a1 = 270
+    a2 = 360
+    Shapes_AddArc()
+  EndIf
+EndSub
+
+Sub Shapes_AddText
+  ' Shapes | Add text
+  ' param x, y - top left position
+  ' param txt - text
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  Shapes_FontToEntry()
+  func = "text"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_AddTriangle
+  ' Shapes | Add triangle
+  ' param x1, y1 - first point
+  ' param x2, y2 - second point
+  ' param x3, y3 - third point
+  Shapes_EntryClear()
+  Shapes_PenToEntry()
+  Shapes_BrushToEntry()
+  func = "tri"
+  Shapes_FuncToEntry()
+  Shapes_MoveToEntry()
+  Shapes_RotateToEntry()
+  Shapes_EntryToArray()
+EndSub
+
+Sub Shapes_BrushToEntry
+  ' Shapes | Set brush to entry
+  GraphicsWindow.BrushColor = bc
+  shp["bc"] = bc
+EndSub
+
+Sub Shapes_DumpArray
+  ' Shapes | Dump shape array
+  order = "1=func;2=x;3=y;4=width;5=height;6=x1;7=y1;8=x2;9=y2;"
+  order = order + "10=x3;11=y3;12=txt;13=fn;14=fs;15=fb;16=fi;"
+  order = order + "17=angle;18=pw;19=pc;20=bc;"
+  nOrder = Array.GetItemCount(order)
+  WQ = Text.GetCharacter(34)
+  LF = Text.GetCharacter(10)
+  GraphicsWindow.BrushColor = "Black"
+  GraphicsWindow.FontName = "Consolas"
+  GraphicsWindow.FontSize = 14
+  tbox = Controls.AddMultiLineTextBox(gw / 2, 10)
+  Controls.SetSize(tbox, gw / 2 - 10, gh - 20)
+  buf = "  shX = " + shX + " ' x offset" + LF
+  buf = buf + "  shY = " + shY + " ' y offset" + LF
+  buf = buf + "  shape = " + WQ + WQ + LF
+  For i = iMin To iMax
+    buf = buf + "  shape[" + i + "] = " + WQ
+    shp = shape[i]
+    For j = 1 To nOrder
+      If shp[order[j]] <> "" Then
+        buf = buf + order[j] + "=" + shp[order[j]] + ";"
+      EndIf
+    EndFor
+    buf = buf + WQ + LF
+  EndFor
+  Controls.SetTextBoxText(tbox, buf)
+  Shapes.SetOpacity(tbox, 50)
+EndSub
+
+Sub Shapes_EntryClear
+  ' Shapes | Clear entry
+  shp = ""
+EndSub
+
+Sub Shapes_EntryToArray
+  ' Shapes | Set entry to array
+  iMax = iMax + 1
+  shape[iMax] = shp
+EndSub
+
+Sub Shapes_FontToEntry
+  ' Shapes | Set font property to entry
+  GraphicsWindow.FontSize = fs
+  shp["fs"] = fs
+  GraphicsWindow.FontName = fn
+  shp["fn"] = fn
+  GraphicsWindow.FontBold = fb
+  shp["fb"] = fb
+  GraphicsWindow.FontItalic = fi
+  shp["fi"] = fi
+EndSub
+
+Sub Shapes_FuncToEntry
+  ' Shapes | Set function to entry
+  shp["func"] = func
+  If func = "ell" Then
+    obj = Shapes.AddEllipse(width, height)
+    shp["width"] = Math.Floor(width * 100) / 100
+    shp["height"] = Math.Floor(height * 100) / 100
+  ElseIf func = "rect" Then
+    obj = Shapes.AddRectangle(width, height)
+    shp["width"] = Math.Floor(width * 100) / 100
+    shp["height"] = Math.Floor(height * 100) / 100
+  ElseIf func = "tri" Then
+    obj = Shapes.AddTriangle(x1, y1, x2, y2, x3, y3)
+    shp["x1"] = Math.Floor(x1 * 100) / 100
+    shp["y1"] = Math.Floor(y1 * 100) / 100
+    shp["x2"] = Math.Floor(x2 * 100) / 100
+    shp["y2"] = Math.Floor(y2 * 100) / 100
+    shp["x3"] = Math.Floor(x3 * 100) / 100
+    shp["y3"] = Math.Floor(y3 * 100) / 100
+  ElseIf func = "line" Then
+    obj = Shapes.AddLine(x1, y1, x2, y2)
+    shp["x1"] = Math.Floor(x1 * 100) / 100
+    shp["y1"] = Math.Floor(y1 * 100) / 100
+    shp["x2"] = Math.Floor(x2 * 100) / 100
+    shp["y2"] = Math.Floor(y2 * 100) / 100
+  ElseIf func = "text" Then
+    obj = Shapes.AddText(txt)
+    shp["text"] = txt
+  EndIf
+EndSub
+
+Sub Shapes_MoveToEntry
+  ' Shapes | Set move position to entry
+  Shapes.Move(obj, x, y)
+  shp["x"] = Math.Floor(x * 100) / 100
+  shp["y"] = Math.Floor(y * 100) / 100
+EndSub
+
+Sub Shapes_Normalize
+  ' Shapes | Normalize entries
+  For i = 1 To iMax
+    shp = shape[i]
+    If Text.IsSubText("line|tri", shp["func"]) Then
+      xmin = shp["x1"]
+      ymin = shp["y1"]
+      If shp["x2"] < xmin Then
+        xmin = shp["x2"]
+      EndIf
+      If shp["y2"] < ymin Then
+        ymin = shp["y2"]
+      EndIf
+      If shp["func"] = "tri" Then
+        If shp["x3"] < xmin Then
+          xmin = shp["x3"]
+        EndIf
+        If shp["y3"] < ymin Then
+          ymin = shp["y3"]
+        EndIf
+        shp["x3"] = shp["x3"] - xmin
+        shp["y3"] = shp["y3"] - ymin
+      EndIf
+      shp["x"] = shp["x"] + xmin
+      shp["y"] = shp["y"] + ymin
+      shp["x1"] = shp["x1"] - xmin
+      shp["y1"] = shp["y1"] - ymin
+      shp["x2"] = shp["x2"] - xmin
+      shp["y2"] = shp["y2"] - ymin
+      shape[i] = shp
+    EndIf
+  EndFor
+  If 0 < iMax Then
+    shp = shape[1]
+    xmin = shp["x"]
+    ymin = shp["y"]
+    xmax = shp["x"]
+    ymax = shp["y"]
+  EndIf
+  For i = 2 To iMax
+    shp = shape[i]
+    If shp["x"] < xmin Then
+      xmin = shp["x"]
+    EndIf
+    If shp["y"] < ymin Then
+      ymin = shp["y"]
+    EndIf
+    If xmax < shp["x"] Then
+      xmax = shp["x"]
+    EndIf
+    If ymax < shp["y"] Then
+      ymax = shp["y"]
+    EndIf
+  EndFor
+  shX = xmin
+  shY = ymin
+  For i = 1 To iMax
+    shp = shape[i]
+    shp["x"] = shp["x"] - xmin
+    shp["y"] = shp["y"] - ymin
+    If shp["angle"] = 0 Then
+      shp["angle"] = ""
+    EndIf
+    shape[i] = shp
+  EndFor
+EndSub
+
+Sub Shapes_PenToEntry
+  ' Shapes | Set pen property to entry
+  GraphicsWindow.PenWidth = pw
+  shp["pw"] = pw
+  If 0 < pw Then 
+    GraphicsWindow.PenColor = pc
+    shp["pc"] = pc
+  EndIf
+EndSub
+
+Sub Shapes_RotateToEntry
+  ' Shapes | Set rotate angle to entry
+  If angle <> 0 Then
+    Shapes.Rotate(obj, angle)
+    shp["angle"] = Math.Floor(angle * 100) / 100
+  EndIf
+EndSub
+    

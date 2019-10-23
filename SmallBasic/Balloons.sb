@@ -1,0 +1,100 @@
+' Balloons
+' Version 0.2
+' Copyright © 2019 Nonki Takahashi.  The MIT License.
+
+GraphicsWindow.Title = "Balloons"
+Init()
+GraphicsWindow.PenWidth = 0
+t0 = Clock.ElapsedMilliseconds
+Timer.Interval = dt * 1000
+Timer.Tick = UpdateBalloon
+
+Sub AddBalloon
+  ' param ew - width
+  ' param eh = height
+  ' param i = index
+  e[i] = Shapes.AddEllipse(ew, eh)
+  t[i] = Shapes.AddTriangle(0, 0, tw, 0, tw / 2, th)
+  v[i] = 0
+  a[i] = 0
+EndSub
+
+Sub MoveBalloon
+  ' param i - index
+  ' param x, y - position
+  ex[i] = x - ew / 2
+  ey[i] = y - eh / 2
+  Shapes.Move(e[i], ex[i], ey[i])
+  tx[i] = x - tw / 2
+  ty[i] = y + th
+  Shapes.Move(t[i], tx[i], ty[i])
+EndSub
+
+Sub RemoveBalloon
+  ' param i - index
+  Shapes.Remove(e[i])
+  Shapes.Remove(t[i])
+  e[i] = ""
+  t[i] = ""
+EndSub
+
+Sub Init
+  gw = 598
+  gh = 428
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+  GraphicsWindow.BackgroundColor = "SkyBlue"
+  ew = 70
+  eh = 90
+  sqr2 = Math.SquareRoot(2)
+  tw = ew / sqr2
+  th = eh / sqr2 / 2
+  n = 12
+  dt = 0.2  ' sec
+  g = -3    ' px/sec^2
+  v0 = 20   ' px/sec
+  c[1] = "#FF9999"
+  c[2] = "#FFCC66"
+  c[3] = "#FFFF66"
+  c[4] = "#CCFF66"
+  c[5] = "#66FF66"
+  c[6] = "#33FFCC"
+  c[7] = "#66FFFF"
+  c[8] = "#66CCFF"
+  c[9] = "#9999FF"
+  c[10] = "#CC66FF"
+  c[11] = "#FF66FF"
+  c[12] = "#FF33CC"
+EndSub
+
+Sub UpdateBalloon
+  t1 = Clock.ElapsedMilliseconds
+  If j <= n And j * 800 <= (t1 - t0) Then
+    GraphicsWindow.BrushColor = c[j]
+    i = j
+    AddBalloon()
+    x = Math.GetRandomNumber(gw -  2 * ew) + ew
+    y = Math.GetRandomNumber(eh) + eh + gh
+    MoveBalloon()
+    j = j + 1
+  EndIf
+  noBalloon = "True"
+  For i = 1 To j - 1
+    If e[i] <> "" Then
+      _v = v[i]
+      v[i] = _v + g * dt
+      sign = Math.GetRandomNumber(2) * 2 - 3
+      x = ex[i] + ew / 2 + sign * 2
+      y = ey[i] + eh / 2 + (_v + v[i]) * dt / 2
+      If y < -2 * eh Then
+        RemoveBalloon()
+      Else
+        MoveBalloon()
+        noBalloon = "False"
+      EndIf
+    EndIf
+  EndFor
+  If noBalloon Then
+  EndIf
+EndSub
+        
