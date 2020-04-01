@@ -1,0 +1,235 @@
+' SVG Viewer
+' Copyright © 2020 Nonki Takahashi.  The MIT License.
+' Using LitDev Extension
+
+Init()
+
+While "True"
+  If cboxChanged Then
+    GraphicsWindow.Title = title + " - loading..."
+    path = svgs[LDControls.ComboBoxGetSelected(cbox)]
+    nSVG = 0
+    level = 1
+    buf = ""
+    LDxml.Open(path)
+    LDxml.FirstNode()
+    ParseContainer()
+    ShowSVG()
+    cboxChanged = "False"
+    GraphicsWindow.Title = title
+  Else
+    Program.Delay(200)
+  EndIf
+EndWhile
+
+Sub Init
+  title = "SVG Viewer"
+  GraphicsWindow.Title = title
+  Not = "False=True;True=False;"
+  LF = Text.GetCharacter(10)
+  WQ = Text.GetCharacter(34)
+  gw = 1000
+  gh = 450
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+  GraphicsWindow.BackgroundColor = "LightGray"
+  
+  ' add combobox
+  GraphicsWindow.BrushColor = "Black"
+  files = File.GetFiles("c:\temp")
+  SelectSVG()
+  cbox = LDControls.AddComboBox(svgs, gw - 20, gh - 50)
+  Controls.Move(cbox, 10, 10)
+  
+  ' add textbox
+  tbox = Controls.AddMultiLineTextBox(10, 10)
+  Controls.Move(tbox, 620, 40)
+  Controls.SetSize(tbox, gw - 630, gh - 50)
+  
+  ' flag area
+  GraphicsWindow.BrushColor = "#11000000"
+  GraphicsWindow.FillRectangle(10, 40, 600, 400)
+  
+  ' elements (*: obsolete and depricated)
+  elements["animation"] = "animate|animateColor*|animateMotion|animateTransform|discard|mpath|set"
+  elements["basicShapes"] = "circle|ellipse|line|polygon|polyline|rect"
+  elements["otherShapes"] = "mesh|path"
+  elements["container"] = "a|defs|g|marker|mask|missing-glyph*|pattern|svg|switch|symbol|unknown"
+  elements["descriptive"] = "desc|metadata|title"
+  elements["filterPrimitive"] = "feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|feSpecularLighting|feTile|feTurbulence"
+  elements["font"] = "font*|font-face*|font-face-format*|font-face-name*|font-face-src*|font-face-uri*|hkern*|vkern*"
+  elements["gradient"] = "linearGradient|meshGradient|radialGradient|stop"
+  elements["graphicsReferencing"] = "mesh|use"
+  elements["neverRended"] = "clipPath|defs|hatch|linearGradient|marker|mask|meshgradient|metadata|pattern|radialGradient|script|style|symbol|title"
+  elements["otherGraphics"] = "image|path|text"
+  elements["graphics"] = elements["basicShapes"] + "|" + elements["graphicsReferencing"] + "|" + elements["otherGraphics"]
+  elements["lightSource"] = "feDistantLight|fePointLight|feSpotLight"
+  elements["paintServer"] = "hatch|linearGradient|meshgradient|pattern|radialGradient|solidcolor"
+  elements["renderable"] = "a|circle|ellipse|foreignObject|g|image|line|mesh|path|polygon|polyline|rect|svg|switch|symbol|text|textPath|tspan|unknown|use"
+  elements["shapes"] = elements["basicShapes"] + "|" + elements["otherShapes"]
+  elements["structural"] = "defs|g|svg|symbol|use"
+  elements["textContentChild"] = "altGlyph*|textPath|tref|tspan"
+  elements["textContentOther"] = "altGlyphDef*|altGlyphItem*|glyph*|glyphRef*|text"
+  elements["textContent"] = elements["textOtherContent"] + "|" + elements["textContentChild"]
+  elements["uncategorized"] = "clipPath|color-profile|cursor*|filter|foreignObject|hatchpath|meshpatch|meshrow|script|style|view"
+  
+  LDControls.ComboBoxItemChanged = OnCboxChanged
+EndSub
+
+Sub OnCboxChanged
+  cboxChanged = "True"
+EndSub
+
+Sub ParseAnimation
+  If Text.IsSubText("|" + elements["animation"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseAttr
+  attr = LDxml.Attributes
+  index = Array.GetAllIndices(attr)
+  nAttr = Array.GetItemCount(attr)
+  For iAttr = 1 To nAttr
+    buf = buf + index[iAttr] + "=" + attr[index[iAttr]] + ";"
+  EndFor
+EndSub
+
+Sub ParseContainer
+  If Text.IsSubText("|" + elements["container"] + "|", "|" + LDxml.NodeName + "|") Then
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    ParseAttr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    LDxml.FirstChild()
+    Stack.PushValue("local", level)
+    level = level + 1
+    match = "True"
+    While match
+      ParseDescriptive()
+      If Not[match] Then
+        ParseGraphics()
+      EndIf
+      If Not[match] Then
+        ParseContainer()
+      EndIf
+      If match Then
+        result = LDxml.NextSibling()
+        If result = "FAILED" Then
+          match = "False"
+        EndIf
+      EndIf
+    EndWhile
+    level = Stack.PopValue("local")
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub ParseDescriptive
+  If Text.IsSubText("|" + elements["descriptive"] + "|", "|" + LDxml.NodeName + "|") Then
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    If LDxml.NodeName = "title" Then
+      buf = buf + "title=" + LDxml.NodeInnerText + ";"
+    Else
+      ParseAttr()
+    EndIf
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub ParseFilterPrimitive
+  If Text.IsSubText("|" + elements["filterPrimitive"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseFont
+  If Text.IsSubText("|" + elements["font"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseGradient
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseGraphics
+  If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' Basic Shapes 
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    ParseAttr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    If LDxml.NodeName = "circle" Then
+    ElseIf LDxml.NodeName = "ellipse" Then
+    ElseIf LDxml.NodeName = "line" Then
+    ElseIf LDxml.NodeName = "polygon" Then
+    ElseIf LDxml.NodeName = "polyline" Then
+    ElseIf LDxml.NodeName = "rect" Then
+    EndIf
+    match = "True"
+  ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' Graphics Referencing
+  ElseIf Text.IsSubText("|" + elements["otherGraphics"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' other Graphics
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    ParseAttr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub ParseLightSource
+  If Text.IsSubText("|" + elements["lightSource"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParsePaintServer
+  If Text.IsSubText("|" + elements["paintServer"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseTextContent
+  If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + LDxml.NodeName + "|") Then
+  ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub ParseUncategorized
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SelectSVG
+  nSVG = 0
+  nFile = Array.GetItemCount(files)
+  For iFile = 1 To nFile
+    If Text.EndsWith(files[iFile], ".svg") Then
+      nSVG = nSVG + 1 
+      svgs[nSVG] = files[iFile]
+    EndIf
+  EndFor
+EndSub
+
+Sub ShowSVG
+  buf = ""
+  For iSVG = 1 To nSVG
+    buf = buf + "svg[" + iSVG + "] = " + WQ + svg[iSVG] + WQ + LF
+  EndFor    
+  Controls.SetTextBoxText(tbox, buf)
+EndSub

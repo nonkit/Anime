@@ -1,12 +1,12 @@
 ' Shapes Normalize Sample
-' Copyright © 2019 Nonki Takahashi.  The MIT License.
+' Copyright © 2019-2020 Nonki Takahashi.  The MIT License.
 
 SB_Workaround()
 Shapes_Init_Logo()
 name = "Logo"
 Group_Add()
 Shapes_Normalize()
-Shapes_DumpArray()
+Shapes_Dump()
 
 Sub Group_Add
   ' Group | add shapes to a group
@@ -180,7 +180,7 @@ Sub Shapes_CalcWidthAndHeight
   EndFor
 EndSub
 
-Sub Shapes_DumpArray
+Sub Shapes_Dump
   ' Shapes | dump shapes data
   order = "1=func;2=x;3=y;4=width;5=height;6=x1;7=y1;8=x2;9=y2;"
   order = order + "10=x3;11=y3;12=txt;13=fn;14=fs;15=fb;16=fi;"
