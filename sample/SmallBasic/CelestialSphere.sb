@@ -1,0 +1,217 @@
+' Celestial Sphere
+' Version 0.4
+' Copyright © 2016-2019 Nonki Takahshi.  The MIT License.
+' Program ID PBW108-4
+
+title = "Celestial Sphere"
+bg = "White"    ' "Black"
+pw = 2          ' 1
+pc = "White"    ' "#666666"
+ec = "#999900"  ' ecliptic color
+ecliptic = "False"
+r = 100     ' [px]
+delay = 100 ' [ms]
+Init()
+rot = 0
+tilt = -30
+ra = rot + 12     ' oposite
+If 24 <= ra Then
+  ra = ra - 24
+EndIf
+dec = -tilt       ' oposite
+GraphicsWindow.Title = title + " RA=" + ra + "h Dec=" + dec + "°"
+GraphicsWindow.BrushColor = "MidnightBlue"
+GraphicsWindow.FillEllipse(ox - r, oy - r, 2 * r, 2 * r)
+DrawRA()
+DrawDec()
+If ecliptic Then
+  DrawEcliptic()
+EndIf
+While "True"
+  If keyDown Then
+    If key = "Right" Then     ' oposite
+      rot = rot - 0.25
+      If rot < 0 Then
+        rot = rot + 24
+      EndIf
+    ElseIf key = "Left" Then  ' oposite
+      rot = rot + 0.25
+      If 24 <= rot Then
+        rot = rot - 24
+      EndIf
+    ElseIf key = "Up" Then
+      If tilt <= 85 Then
+        tilt = tilt + 5
+      EndIf
+    ElseIf key = "Down" Then
+      If -85 <= tilt Then
+        tilt = tilt - 5
+      EndIf
+    ElseIf key = "Add" Then
+      r = r * 1.2
+    ElseIf key = "Subtract" Then
+      r = r / 1.2
+    EndIf
+    ra = rot + 12     ' oposite
+    If 24 <= ra Then
+      ra = ra - 24
+    EndIf
+    dec = -tilt       ' oposite
+    GraphicsWindow.Title = title + " RA=" + ra + "h Dec=" + dec + "°"
+    GraphicsWindow.BrushColor = bg
+    GraphicsWindow.FillRectangle(0, 0, gw, gh)
+    GraphicsWindow.BrushColor = "MidnightBlue"
+    GraphicsWindow.FillEllipse(ox - r, oy - r, 2 * r, 2 * r)
+    DrawRA()
+    DrawDec()
+    If ecliptic Then
+      DrawEcliptic()
+    EndIf
+    keyDown = "False"
+  EndIf
+  Program.Delay(delay)
+EndWhile
+
+Sub Init
+  gw = 598
+  gh = 428
+  GraphicsWindow.Width = gw
+  GraphicsWindow.Height = gh
+  GraphicsWindow.BackgroundColor = bg
+  ox = gw / 2
+  oy = gh / 2
+  GraphicsWindow.KeyDown = OnKeyDown
+EndSub
+
+Sub OnKeyDown
+  keyDown = "True"
+  key = GraphicsWindow.LastKey
+EndSub
+
+Sub DrawRA
+  GraphicsWindow.PenWidth = pw
+  GraphicsWindow.PenColor = pc
+  roll = 0
+  For ra = 0 To 23 Step 2 '1
+    For dec = -90 To 90 Step 5
+      Mapping()
+      If -90 < dec Then
+        DrawLine()
+      EndIf
+      xLast = x
+      yLast = y
+      zLast = z
+    EndFor
+  EndFor
+EndSub
+
+Sub DrawDec
+  GraphicsWindow.PenWidth = pw
+  GraphicsWindow.PenColor = pc
+  roll = 0
+  For dec = -80 To 80 Step 30 '10
+    For ra = 0 To 24 Step 0.2
+      Mapping()
+      If 0 < ra Then
+        DrawLine()
+      EndIf
+      xLast = x
+      yLast = y
+      zLast = z
+    EndFor
+  EndFor
+EndSub
+
+Sub DrawEcliptic
+  GraphicsWindow.PenWidth = pw
+  GraphicsWindow.PenColor = ec
+  roll = 23.26
+  dec = 0
+  For ra = 0 To 24 Step 0.2
+    Stack.PushValue("local", ra)
+    Mapping()
+    If 0 < ra Then
+      DrawLine()
+    EndIf
+    xLast = x
+    yLast = y
+    zLast = z
+    ra = Stack.PopValue("local")
+  EndFor
+EndSub
+
+Sub DrawLine
+  visible = "False"
+  If z <= 0 And zLast <= 0 Then ' oposite
+    If 0 <= x And x < gw And 0 <= y And y < gh Then
+      visible = "True"
+    ElseIf 0 <= xLast And xLast < gw And 0 <= yLast And yLast < gh Then
+      visible = "True"
+    EndIf
+  EndIf
+  If visible Then
+    GraphicsWindow.DrawLine(xLast, yLast, x, y)
+  EndIf
+EndSub
+
+Sub Mapping
+  ' param ra - right asension [h]
+  ' param rot - rotation [h]
+  ' param dec - declination [deg]
+  ' param tilt - tilt [deg]
+  ' param roll - roll [deg]
+  ' param r - radius [px]
+  ' return x, y - position in the graphics window [px]
+  ' return z - visible if 0 <= z
+  If Text.IsSubText(ra, " ") Then
+    _ra = Text.GetSubText(ra, 1, 2)
+    _ra = _ra + Text.GetSubText(ra, 4, 2) / 60
+    _ra = _ra + Text.GetSubText(ra, 7, 5) / 3600
+    ra = _ra
+  EndIf
+  If Text.IsSubText(dec, " ") Then
+    _dec = Text.GetSubText(dec, 2, 2)
+    _dec = _dec + Text.GetSubText(dec, 5, 2) / 60
+    _dec = _dec + Text.GetSubText(dec, 8, 5) / 3600
+    _dec = _dec * Text.Append(Text.GetSubText(dec, 1, 1), "1")
+    dec = _dec
+  EndIf
+  φ = Math.GetRadians(ra * 15)
+  θ = Math.GetRadians(dec)
+  x = ox - r * Math.Sin(φ) * Math.Cos(θ)
+  y = oy - r * Math.Sin(θ)
+  z = r * Math.Cos(φ) * Math.Cos(θ)
+  If roll <> 0 Then
+    _x = x - ox
+    _y = y - oy
+    ψ = Math.GetRadians(roll)
+    x = ox + Math.Cos(ψ) * _x - Math.Sin(ψ) * _y
+    y = oy + Math.Sin(ψ) * _x + Math.Cos(ψ) * _y
+  EndIf
+  If rot <> 0 Then
+    _x = x - ox
+    _z = z
+    ρ = Math.GetRadians(-rot * 15)
+    x = ox + Math.Cos(ρ) * _x - Math.Sin(ρ) * _z
+    z = Math.Sin(ρ) * _x + Math.Cos(ρ) * _z
+  EndIf
+  If tilt <> 0 Then
+    _z = z
+    _y = y - oy
+    τ = Math.GetRadians(tilt)
+    z = Math.Cos(τ) * _z - Math.Sin(τ) * _y
+    y = oy + Math.Sin(τ) * _z + Math.Cos(τ) * _y
+  EndIf
+EndSub
+
+Sub SB_Workaround
+  ' Small Basic | Workaround for Silverlight
+  ' returns silverlight - "True" if in remote
+  color = GraphicsWindow.GetPixel(0, 0)
+  If Text.GetLength(color) > 7 Then
+    silverlight = "True"
+    msWait = 300
+  Else
+    silverlight = "False"
+  EndIf
+EndSub

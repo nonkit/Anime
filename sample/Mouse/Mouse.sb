@@ -1,12 +1,28 @@
-' Mouse Animation
-' Version 0.1
-' Copyright © 2019 Nonki Takahashi.  The MIT Licnese.
-' Last update 2019-09-28
+' Happy New Year 2020 - Mouse Animation
+' Version 0.2
+' Copyright © 2019-2020 Nonki Takahashi.  The MIT Licnese.
+' Last update 2020-01-01
+' Program ID HWD979-0
 
-GraphicsWindow.Title = "Mouse Animation"
+GraphicsWindow.Title = "Happy New Year 2020"
 Init()
-While "True"
-  For t = 0 To 2 * Math.Pi Step Math.Pi / 3
+For i = 1 To 3
+  t0 = Math.Pi / 3
+  t1 = t0 + i * Math.Pi / 3 * 6.2 
+  AddMouse()
+EndFor
+
+Sub AddMouse
+  name = "Mouse"
+  Group_Add()
+  grp = group[i]
+  shape = grp["shape"]
+  da = 10
+  MoveLegs()
+  Program.Delay(1000)
+  y = gh - 90
+  x = gw
+  For t = t0 To t1 Step Math.Pi / 3
     Group_Move()
     da = 45 * Math.Sin(t)
     MoveLegs()
@@ -16,9 +32,10 @@ While "True"
     EndIf
     Program.Delay(200) 
   EndFor
-EndWhile
+EndSub
 
 Sub Init
+  LF = Text.GetCharacter(10)
   Not = "True=False;False=True;"
   SB_Workaround()
   angle = 0 ' dummy
@@ -26,23 +43,20 @@ Sub Init
   gw = GraphicsWindow.Width
   gh = GraphicsWindow.Height
   GraphicsWindow.FontName = "Impact"
-  GraphicsWindow.BrushColor = "#AAAAAA"
+  GraphicsWindow.BrushColor = "#999999"
   GraphicsWindow.FontSize = 40
-  GraphicsWindow.DrawText(gw / 2 - 262, 70, "Happy New Year")
+  GraphicsWindow.DrawText(40, 40, "Happy" + LF + "New" + LF + "Year")
   GraphicsWindow.BrushColor = "DarkBlue"
-  GraphicsWindow.FontSize = 100
-  GraphicsWindow.DrawText(gw / 2 + 48, 10, "2020")
+  GraphicsWindow.FontSize = 80
+  GraphicsWindow.DrawText(40, 190, "2020")
+  url = "http://www.nonkit.com/smallbasic.files/Mouse.png"
+  img = ImageList.LoadImage(url)
+  iw = ImageList.GetWidthOfImage(img)
+  ih = ImageList.GetHeightOfImage(img)
+  scale = 0.6
+  GraphicsWindow.DrawResizedImage(url, 245, 35, scale * iw, scale * ih)
+  scale = 1
   Shapes_Init_Mouse()
-  name = "Mouse"
-  Group_Add()
-  i = nGroup
-  grp = group[i]
-  shape = grp["shape"]
-  da = 10
-  MoveLegs()
-  Program.Delay(1000)
-  y = gh - 71
-  x = gw
 EndSub
 
 Sub MoveLegs
