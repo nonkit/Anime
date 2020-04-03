@@ -1,5 +1,5 @@
 ' SVG Viewer
-' Version 0.2b
+' Version 0.3b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
@@ -14,6 +14,8 @@ While "True"
     level = 1
     buf = ""
     len = 0
+    xo = 0
+    yo = 0
     LDxml.Open(path)
     LDxml.FirstNode()
     SVG_Container()
@@ -26,7 +28,7 @@ While "True"
 EndWhile
 
 Sub Init
-  title = "SVG Viewer 0.2b"
+  title = "SVG Viewer 0.3b"
   GraphicsWindow.Title = title
   Not = "False=True;True=False;"
   dir = "C:\temp"
@@ -212,20 +214,31 @@ Sub Parse_d
     If attr["stroke-width"] <> "" Then
       GraphicsWindow.PenWidth = attr["stroke-width"] * scale
     EndIf
-    If attr["fill"] <> "" Then
+    If attr["fill"] = "none" Then
+      GraphicsWindow.BrushColor = "Transparent"
+    ElseIf attr["fill"] <> "" Then
       GraphicsWindow.BrushColor = attr["fill"]
-      pt = ""
-      pts = LDText.Split(points[iPoints], " ")
-      nPts = Array.GetItemCount(pts)
-      For iPts = 1 To nPts
-        _pt = LDText.Split(pts[iPts], ",")
-        pt[iPts][1] = Math.Round(_pt[1] * scale)
-        pt[iPts][2] = Math.Round(_pt[2] * scale)
-      EndFor
-      nShp = nShp + 1
-      shp[nShp] = LDShapes.AddPolygon(pt)
-      Shapes.Move(shp[nShp], xL, yT)
+    ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
+      GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
+    Else
+      GraphicsWindow.BrushColor = "Black"
     EndIf
+    pt = ""
+    pts = LDText.Split(points[iPoints], " ")
+    nPts = Array.GetItemCount(pts)
+    For iPts = 1 To nPts
+      _pt = LDText.Split(pts[iPts], ",")
+      pt[iPts][1] = Math.Round(_pt[1] * scale)
+      pt[iPts][2] = Math.Round(_pt[2] * scale)
+    EndFor
+    nShp = nShp + 1
+    shp[nShp] = LDShapes.AddPolygon(pt)
+    If attr["fill-rule"] = "evenodd" Then
+      LDShapes.SetProperty(shp[nShp], "FillRule", "EvenOdd")
+    Else
+      LDShapes.SetProperty(shp[nShp], "FillRule", "NonZero")
+    EndIf
+    Shapes.Move(shp[nShp], xL, yT)
   EndFor
 EndSub
 
@@ -511,6 +524,13 @@ Sub SVG_Container
     len = Text.GetLength(buf)
     Parse_ViewBox()
     buf = ""
+    If Not[match] Then
+      If attr["width"] <> "" Then
+        scale = vw / attr["width"]
+      Else
+        scale = 1
+      EndIf
+    EndIf
     LDxml.FirstChild()
     Stack.PushValue("local", level)
     level = level + 1
@@ -580,11 +600,93 @@ Sub SVG_Graphics
     svg[nSVG] = buf
     buf = ""
     If LDxml.NodeName = "circle" Then
+      If attr["stroke"] = "" Then
+        GraphicsWindow.PenColor = "Transparent"
+      Else
+        GraphicsWindow.PenColor = attr["stroke"]
+      EndIf
+      If attr["stroke-width"] <> "" Then
+        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
+      EndIf
+      If attr["fill"] = "none" Then
+        GraphicsWindow.BrushColor = "Transparent"
+      ElseIf attr["fill"] <> "" Then
+        GraphicsWindow.BrushColor = attr["fill"]
+      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
+        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
+      Else
+        GraphicsWindow.BrushColor = "Black"
+      EndIf
+      cx = attr["cx"] * scale
+      cy = attr["cy"] * scale
+      r = attr["r"] * scale
+      nShp = nShp + 1
+      shp[nShp] = Shapes.AddEllipse(2 * r, 2 * r)
+      Shapes.Move(shp[nShp], xL + cx - r, yT + cy - r)
     ElseIf LDxml.NodeName = "ellipse" Then
     ElseIf LDxml.NodeName = "line" Then
     ElseIf LDxml.NodeName = "polygon" Then
+      If attr["stroke"] = "" Then
+        GraphicsWindow.PenColor = "Transparent"
+      Else
+        GraphicsWindow.PenColor = attr["stroke"]
+      EndIf
+      If attr["stroke-width"] <> "" Then
+        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
+      EndIf
+      If attr["fill"] = "none" Then
+        GraphicsWindow.BrushColor = "Transparent"
+      ElseIf attr["fill"] <> "" Then
+        GraphicsWindow.BrushColor = attr["fill"]
+      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
+        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
+      Else
+        GraphicsWindow.BrushColor = "Black"
+      EndIf
+      iPoints = 1
+      points[iPoints] = attr["points"]
+      pt = ""
+      pts = LDText.Split(points[iPoints], " ")
+      nPts = Array.GetItemCount(pts)
+      For iPts = 1 To nPts
+        _pt = LDText.Split(pts[iPts], ",")
+        pt[iPts][1] = Math.Round(_pt[1] * scale)
+        pt[iPts][2] = Math.Round(_pt[2] * scale)
+      EndFor
+      nShp = nShp + 1
+      shp[nShp] = LDShapes.AddPolygon(pt)
+      If attr["fill-rule"] = "evenodd" Then
+        LDShapes.SetProperty(shp[nShp], "FillRule", "EvenOdd")
+      Else
+        LDShapes.SetProperty(shp[nShp], "FillRule", "NonZero")
+      EndIf
+      Shapes.Move(shp[nShp], xL, yT)
     ElseIf LDxml.NodeName = "polyline" Then
     ElseIf LDxml.NodeName = "rect" Then
+      If attr["stroke"] = "" Then
+        GraphicsWindow.PenColor = "Transparent"
+      Else
+        GraphicsWindow.PenColor = attr["stroke"]
+      EndIf
+      If attr["stroke-width"] <> "" Then
+        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
+      EndIf
+      If attr["fill"] = "none" Then
+        GraphicsWindow.BrushColor = "Transparent"
+      ElseIf attr["fill"] <> "" Then
+        GraphicsWindow.BrushColor = attr["fill"]
+      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
+        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
+      Else
+        GraphicsWindow.BrushColor = "Black"
+      EndIf
+      width = attr["width"] * scale
+      height = attr["height"] * scale
+      x = attr["x"] * scale
+      y = attr["y"] * scale
+      nShp = nShp + 1
+      shp[nShp] = Shapes.AddRectangle(width, height)
+      Shapes.Move(shp[nShp], xL + x, yT + y)
     EndIf
     match = "True"
   ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + LDxml.NodeName + "|") Then
@@ -630,3 +732,4 @@ Sub SVG_Uncategorized
   If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
   EndIf
 EndSub
+    
