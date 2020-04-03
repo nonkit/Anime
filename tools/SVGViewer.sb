@@ -1,4 +1,5 @@
 ' SVG Viewer
+' Version 0.2b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
@@ -6,14 +7,16 @@ Init()
 
 While "True"
   If cboxChanged Then
+    RemoveShapes()
     GraphicsWindow.Title = title + " - loading..."
     path = svgs[LDControls.ComboBoxGetSelected(cbox)]
     nSVG = 0
     level = 1
     buf = ""
+    len = 0
     LDxml.Open(path)
     LDxml.FirstNode()
-    ParseContainer()
+    SVG_Container()
     ShowSVG()
     cboxChanged = "False"
     GraphicsWindow.Title = title
@@ -23,32 +26,38 @@ While "True"
 EndWhile
 
 Sub Init
-  title = "SVG Viewer"
+  title = "SVG Viewer 0.2b"
   GraphicsWindow.Title = title
   Not = "False=True;True=False;"
+  dir = "C:\temp"
   LF = Text.GetCharacter(10)
   WQ = Text.GetCharacter(34)
-  gw = 1000
-  gh = 450
+  vw = 400
+  vh = 400
+  gw = vw + 300
+  gh = vh + 50
+  xL = 10
+  yT = 40
+  nShp = 0
   GraphicsWindow.Width = gw
   GraphicsWindow.Height = gh
   GraphicsWindow.BackgroundColor = "LightGray"
   
   ' add combobox
   GraphicsWindow.BrushColor = "Black"
-  files = File.GetFiles("c:\temp")
+  files = File.GetFiles(dir)
   SelectSVG()
   cbox = LDControls.AddComboBox(svgs, gw - 20, gh - 50)
   Controls.Move(cbox, 10, 10)
   
   ' add textbox
   tbox = Controls.AddMultiLineTextBox(10, 10)
-  Controls.Move(tbox, 620, 40)
-  Controls.SetSize(tbox, gw - 630, gh - 50)
+  Controls.Move(tbox, vw + 20, 40)
+  Controls.SetSize(tbox, gw - vw - 30, gh - 50)
   
   ' flag area
   GraphicsWindow.BrushColor = "#11000000"
-  GraphicsWindow.FillRectangle(10, 40, 600, 400)
+  GraphicsWindow.FillRectangle(xL, yT, vw, vh)
   
   ' elements (*: obsolete and depricated)
   elements["animation"] = "animate|animateColor*|animateMotion|animateTransform|discard|mpath|set"
@@ -80,139 +89,11 @@ Sub OnCboxChanged
   cboxChanged = "True"
 EndSub
 
-Sub ParseAnimation
-  If Text.IsSubText("|" + elements["animation"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseAttr
-  attr = LDxml.Attributes
-  index = Array.GetAllIndices(attr)
-  nAttr = Array.GetItemCount(attr)
-  For iAttr = 1 To nAttr
-    buf = buf + index[iAttr] + "=" + attr[index[iAttr]] + ";"
+Sub RemoveShapes
+  For iShp = 1 To nShp
+    Shapes.Remove(shp[iShp])
   EndFor
-EndSub
-
-Sub ParseContainer
-  If Text.IsSubText("|" + elements["container"] + "|", "|" + LDxml.NodeName + "|") Then
-    buf = buf + "element=" + LDxml.NodeName + ";"
-    buf = buf + "level=" + level + ";"
-    ParseAttr()
-    nSVG = nSVG + 1
-    svg[nSVG] = buf
-    buf = ""
-    LDxml.FirstChild()
-    Stack.PushValue("local", level)
-    level = level + 1
-    match = "True"
-    While match
-      ParseDescriptive()
-      If Not[match] Then
-        ParseGraphics()
-      EndIf
-      If Not[match] Then
-        ParseContainer()
-      EndIf
-      If match Then
-        result = LDxml.NextSibling()
-        If result = "FAILED" Then
-          match = "False"
-        EndIf
-      EndIf
-    EndWhile
-    level = Stack.PopValue("local")
-    match = "True"
-  Else
-    match = "False"
-  EndIf
-EndSub
-
-Sub ParseDescriptive
-  If Text.IsSubText("|" + elements["descriptive"] + "|", "|" + LDxml.NodeName + "|") Then
-    buf = buf + "element=" + LDxml.NodeName + ";"
-    buf = buf + "level=" + level + ";"
-    If LDxml.NodeName = "title" Then
-      buf = buf + "title=" + LDxml.NodeInnerText + ";"
-    Else
-      ParseAttr()
-    EndIf
-    nSVG = nSVG + 1
-    svg[nSVG] = buf
-    buf = ""
-    match = "True"
-  Else
-    match = "False"
-  EndIf
-EndSub
-
-Sub ParseFilterPrimitive
-  If Text.IsSubText("|" + elements["filterPrimitive"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseFont
-  If Text.IsSubText("|" + elements["font"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseGradient
-  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseGraphics
-  If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + LDxml.NodeName + "|") Then
-    ' Basic Shapes 
-    buf = buf + "element=" + LDxml.NodeName + ";"
-    buf = buf + "level=" + level + ";"
-    ParseAttr()
-    nSVG = nSVG + 1
-    svg[nSVG] = buf
-    buf = ""
-    If LDxml.NodeName = "circle" Then
-    ElseIf LDxml.NodeName = "ellipse" Then
-    ElseIf LDxml.NodeName = "line" Then
-    ElseIf LDxml.NodeName = "polygon" Then
-    ElseIf LDxml.NodeName = "polyline" Then
-    ElseIf LDxml.NodeName = "rect" Then
-    EndIf
-    match = "True"
-  ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + LDxml.NodeName + "|") Then
-    ' Graphics Referencing
-  ElseIf Text.IsSubText("|" + elements["otherGraphics"] + "|", "|" + LDxml.NodeName + "|") Then
-    ' other Graphics
-    buf = buf + "element=" + LDxml.NodeName + ";"
-    buf = buf + "level=" + level + ";"
-    ParseAttr()
-    nSVG = nSVG + 1
-    svg[nSVG] = buf
-    buf = ""
-    match = "True"
-  Else
-    match = "False"
-  EndIf
-EndSub
-
-Sub ParseLightSource
-  If Text.IsSubText("|" + elements["lightSource"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParsePaintServer
-  If Text.IsSubText("|" + elements["paintServer"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseTextContent
-  If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + LDxml.NodeName + "|") Then
-  ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
-EndSub
-
-Sub ParseUncategorized
-  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
-  EndIf
+  nShp = 0
 EndSub
 
 Sub SelectSVG
@@ -232,4 +113,520 @@ Sub ShowSVG
     buf = buf + "svg[" + iSVG + "] = " + WQ + svg[iSVG] + WQ + LF
   EndFor    
   Controls.SetTextBoxText(tbox, buf)
+EndSub
+
+Sub Parse_Arc
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  char = "Aa"
+  Parse_Char()
+  If match Then
+    cmd = c
+  EndIf
+EndSub
+
+Sub Parse_Char
+  ' param char - characters
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return c - character
+  ' return match - "True" if match
+  match = "False"
+  c = Text.GetSubText(buf, p, 1)
+  If (p <= len) And Text.IsSubText(char, c) Then
+    match = "True"
+    p = p + 1
+  EndIf
+EndSub
+
+Sub Parse_ClosePath
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  char = "Zz"
+  Parse_Char()
+  If match Then
+    closed[nPoints] = "True"
+    xo = xm
+    yo = ym
+    cmd = c
+  EndIf
+EndSub
+
+Sub Parse_Cubic
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  char = "CcSs"
+  Parse_Char()
+  If match Then
+    cmd = c
+  EndIf
+EndSub
+
+Sub Parse_d
+  ' convert path definition d to points array
+  ' param buf - attibute d in <path> element
+  ' return points[] - points array
+  ' return match - "True" if match
+  match = "False"
+  len = Text.GetLength(buf)
+  p = 1
+  points = ""
+  closed = ""
+  nPoints = 0
+  While p <= len
+    Parse_Space()
+    Parse_MoveTo()
+    If Not[match] Then
+      Parse_LineTo()
+    EndIf
+    If Not[match] Then
+      Parse_Cubic()
+    EndIf
+    If Not[match] Then
+      Parse_Quadratic()
+    EndIf
+    If Not[match] Then
+      Parse_Arc()
+    EndIf
+    If Not[match] Then
+      Parse_ClosePath()
+    EndIf
+  EndWhile
+  For iPoints = 1 To nPoints
+    If attr["stroke"] = "" Then
+      GraphicsWindow.PenColor = "Transparent"
+    Else
+      GraphicsWindow.PenColor = attr["stroke"]
+    EndIf
+    If attr["stroke-width"] <> "" Then
+      GraphicsWindow.PenWidth = attr["stroke-width"] * scale
+    EndIf
+    If attr["fill"] <> "" Then
+      GraphicsWindow.BrushColor = attr["fill"]
+      pt = ""
+      pts = LDText.Split(points[iPoints], " ")
+      nPts = Array.GetItemCount(pts)
+      For iPts = 1 To nPts
+        _pt = LDText.Split(pts[iPts], ",")
+        pt[iPts][1] = Math.Round(_pt[1] * scale)
+        pt[iPts][2] = Math.Round(_pt[2] * scale)
+      EndFor
+      nShp = nShp + 1
+      shp[nShp] = LDShapes.AddPolygon(pt)
+      Shapes.Move(shp[nShp], xL, yT)
+    EndIf
+  EndFor
+EndSub
+
+Sub Parse_LineTo
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  _p = p
+  char = "LlHhVv"
+  Parse_Char()
+  If match Then
+    cmd = c
+    _points = ""
+  EndIf
+  matchL = "False"
+  If Text.IsSubText("Ll", cmd) Then
+    While match
+      Parse_Space()
+      Parse_Point()
+      If match Then
+        matchL = "True"
+        If cmd = "l" Then
+          x = xo + x
+          y = yo + y
+        EndIf
+        If _points = "" Then
+          _points = x + "," + y
+        Else
+          _points = _points + " " + x + "," + y
+        EndIf
+        xo = x
+        yo = y
+      EndIf
+    EndWhile
+  Else
+    ' cmd is subtext of "HhVv"
+    While match
+      Parse_Space()
+      Parse_Number()
+      If match Then
+        matchL = "True"
+        If cmd = "H" Then
+          x = number
+          y = yo
+        ElseIf cmd = "h" Then
+          x = xo + number
+          y = yo
+        ElseIf cmd = "V" Then
+          x = xo
+          y = number
+        ElseIf cmd = "v" Then
+          x = xo
+          y = yo + number
+        EndIf
+        If _points = "" Then
+          _points = x + "," + y
+        Else
+          _points = _points + " " + x + "," + y
+        EndIf
+        xo = x
+        yo = y
+      EndIf
+    EndWhile
+  EndIf
+  If Not[matchL] Then
+    p = _p
+  Else
+    points[nPoints] = points[nPoints] + " " + _points
+    match = "True"
+  EndIf
+EndSub
+
+Sub Parse_MoveTo
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  _p = p
+  char = "Mm"
+  Parse_Char()
+  If match Then
+    cmd = c
+    _points = ""
+  EndIf
+  matchM = "False"
+  While match
+    Parse_Space()
+    Parse_Point()
+    If match Then
+      matchM = "True"
+      If cmd = "m" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      If _points = "" Then
+        _points = x + "," + y
+      Else
+        _points = _points + " " + x + "," + y
+      EndIf
+      xo = x
+      yo = y
+      xm = x
+      ym = y
+    EndIf
+  EndWhile
+  If Not[matchM] Then
+    p = _p
+  Else
+    nPoints = nPoints + 1
+    points[nPoints] = _points
+    closed[nPoints] = "False"
+    match = "True"
+  EndIf
+EndSub
+
+Sub Parse_Number
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  _p = p
+  matchN = "False"
+  char = "-"
+  Parse_Char()
+  If match Then
+    number = "-"
+  Else
+    number = ""
+  EndIf
+  match = "True"
+  char = "0123456789"
+  While match
+    Parse_Char()
+    If match Then
+      number = Text.Append(number, c)
+      matchN = "True"
+    EndIf
+  EndWhile
+  char = "."
+  Parse_Char()
+  char = "0123456789"
+  While match
+    Parse_Char()
+    If match Then
+      number = Text.Append(number, c)
+      matchN = "True"
+    EndIf
+  EndWhile
+  If Not[matchN] Then
+    p = _p
+  Else
+    match = "True"
+  EndIf
+EndSub
+
+Sub Parse_Point
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  _p = p
+  match = "False"
+  Parse_Number()
+  If match Then
+    x = number
+    Parse_Space()
+    char = ","
+    Parse_Char()
+    match = "True"
+  EndIf
+  If match Then
+    Parse_Number()
+  EndIf
+  If match Then
+    y = number
+  Else
+    p = _p
+  EndIf
+EndSub
+
+Sub Parse_Quadratic
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  char = "QqTt"
+  Parse_Char()
+  If match Then
+    cmd = c
+  EndIf
+EndSub
+
+Sub Parse_Space
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  match = "False"
+  While (p <= len) And (Text.GetSubText(buf, p, 1) = " ")
+    match = "True"
+    p = p + 1
+  EndWhile
+EndSub
+
+Sub Parse_ViewBox
+  ' param buf - buffer to parse
+  ' param len - length of buf
+  ' param p - pointer to buf
+  ' return p - updated pointer to buf
+  ' return match - "True" if match
+  _p = p
+  match = "False"
+  Parse_Number()
+  If match Then
+    viewBox = number  ' x-min
+    Parse_Space()
+    char = ","
+    Parse_Char()
+    match = "True"
+  EndIf
+  If match Then
+    Parse_Number()
+  EndIf
+  If match Then
+    viewBox = Text.Append(viewBox + " ", number)  ' y-min
+    Parse_Space()
+    char = ","
+    Parse_Char()
+    match = "True"
+  EndIf
+  If match Then
+    Parse_Number()
+  EndIf
+  If match Then
+    viewBox = Text.Append(viewBox + " ", number)  ' width
+    Parse_Space()
+    char = ","
+    Parse_Char()
+    match = "True"
+  EndIf
+  If match Then
+    Parse_Number()
+  EndIf
+  If match Then
+    viewBox = Text.Append(viewBox + " ", number)  ' height
+    vb = LDText.Split(viewBox, " ")
+    scale = vw / vb[3]
+  Else
+    p = _p
+  EndIf
+EndSub
+
+Sub SVG_Animation
+  If Text.IsSubText("|" + elements["animation"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_Attr
+  attr = LDxml.Attributes
+  index = Array.GetAllIndices(attr)
+  nAttr = Array.GetItemCount(attr)
+  For iAttr = 1 To nAttr
+    buf = buf + index[iAttr] + "=" + attr[index[iAttr]] + ";"
+  EndFor
+EndSub
+
+Sub SVG_Container
+  If Text.IsSubText("|" + elements["container"] + "|", "|" + LDxml.NodeName + "|") Then
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    SVG_Attr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = attr["viewBox"]
+    p = 1
+    len = Text.GetLength(buf)
+    Parse_ViewBox()
+    buf = ""
+    LDxml.FirstChild()
+    Stack.PushValue("local", level)
+    level = level + 1
+    match = "True"
+    While match
+      SVG_Descriptive()
+      If Not[match] Then
+        SVG_Graphics()
+      EndIf
+      If Not[match] Then
+        SVG_Container()
+      EndIf
+      If match Then
+        result = LDxml.NextSibling()
+        If result = "FAILED" Then
+          match = "False"
+        EndIf
+      EndIf
+    EndWhile
+    level = Stack.PopValue("local")
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub SVG_Descriptive
+  If Text.IsSubText("|" + elements["descriptive"] + "|", "|" + LDxml.NodeName + "|") Then
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    If LDxml.NodeName = "title" Then
+      buf = buf + "title=" + LDxml.NodeInnerText + ";"
+    Else
+      SVG_Attr()
+    EndIf
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub SVG_FilterPrimitive
+  If Text.IsSubText("|" + elements["filterPrimitive"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_Font
+  If Text.IsSubText("|" + elements["font"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_Gradient
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_Graphics
+  If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' Basic Shapes 
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    SVG_Attr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    If LDxml.NodeName = "circle" Then
+    ElseIf LDxml.NodeName = "ellipse" Then
+    ElseIf LDxml.NodeName = "line" Then
+    ElseIf LDxml.NodeName = "polygon" Then
+    ElseIf LDxml.NodeName = "polyline" Then
+    ElseIf LDxml.NodeName = "rect" Then
+    EndIf
+    match = "True"
+  ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' Graphics Referencing
+  ElseIf Text.IsSubText("|" + elements["otherGraphics"] + "|", "|" + LDxml.NodeName + "|") Then
+    ' other Graphics
+    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "level=" + level + ";"
+    SVG_Attr()
+    nSVG = nSVG + 1
+    svg[nSVG] = buf
+    buf = ""
+    If LDxml.NodeName = "image" Then
+    ElseIf LDxml.NodeName = "path" Then
+      buf = attr["d"]
+      Parse_d()
+      buf = ""
+    ElseIf LDxml.NodeName = "text" Then
+    EndIf
+    match = "True"
+  Else
+    match = "False"
+  EndIf
+EndSub
+
+Sub SVG_LightSource
+  If Text.IsSubText("|" + elements["lightSource"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_PaintServer
+  If Text.IsSubText("|" + elements["paintServer"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_TextContent
+  If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + LDxml.NodeName + "|") Then
+  ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
+EndSub
+
+Sub SVG_Uncategorized
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  EndIf
 EndSub
