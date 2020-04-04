@@ -1,8 +1,9 @@
 ' SVG Viewer
-' Version 0.3b
+' Version 0.4b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
+title = "SVG Viewer 0.4b"
 Init()
 
 While "True"
@@ -28,10 +29,11 @@ While "True"
 EndWhile
 
 Sub Init
-  title = "SVG Viewer 0.3b"
   GraphicsWindow.Title = title
   Not = "False=True;True=False;"
   dir = "C:\temp"
+  VT = Text.GetCharacter(9)
+  CR = Text.GetCharacter(13)
   LF = Text.GetCharacter(10)
   WQ = Text.GetCharacter(34)
   vw = 400
@@ -444,7 +446,7 @@ Sub Parse_Space
   ' return p - updated pointer to buf
   ' return match - "True" if match
   match = "False"
-  While (p <= len) And (Text.GetSubText(buf, p, 1) = " ")
+  While (p <= len) And Text.IsSubText(" " + VT + CR + LF, Text.GetSubText(buf, p, 1))
     match = "True"
     p = p + 1
   EndWhile
@@ -600,23 +602,7 @@ Sub SVG_Graphics
     svg[nSVG] = buf
     buf = ""
     If LDxml.NodeName = "circle" Then
-      If attr["stroke"] = "" Then
-        GraphicsWindow.PenColor = "Transparent"
-      Else
-        GraphicsWindow.PenColor = attr["stroke"]
-      EndIf
-      If attr["stroke-width"] <> "" Then
-        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
-      EndIf
-      If attr["fill"] = "none" Then
-        GraphicsWindow.BrushColor = "Transparent"
-      ElseIf attr["fill"] <> "" Then
-        GraphicsWindow.BrushColor = attr["fill"]
-      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
-        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
-      Else
-        GraphicsWindow.BrushColor = "Black"
-      EndIf
+      SVG_SetAttr()
       cx = attr["cx"] * scale
       cy = attr["cy"] * scale
       r = attr["r"] * scale
@@ -624,25 +610,17 @@ Sub SVG_Graphics
       shp[nShp] = Shapes.AddEllipse(2 * r, 2 * r)
       Shapes.Move(shp[nShp], xL + cx - r, yT + cy - r)
     ElseIf LDxml.NodeName = "ellipse" Then
+      SVG_SetAttr()
+      cx = attr["cx"] * scale
+      cy = attr["cy"] * scale
+      rx = attr["rx"] * scale
+      ry = attr["ry"] * scale
+      nShp = nShp + 1
+      shp[nShp] = Shapes.AddEllipse(2 * rx, 2 * ry)
+      Shapes.Move(shp[nShp], xL + cx - rx, yT + cy - ry)
     ElseIf LDxml.NodeName = "line" Then
     ElseIf LDxml.NodeName = "polygon" Then
-      If attr["stroke"] = "" Then
-        GraphicsWindow.PenColor = "Transparent"
-      Else
-        GraphicsWindow.PenColor = attr["stroke"]
-      EndIf
-      If attr["stroke-width"] <> "" Then
-        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
-      EndIf
-      If attr["fill"] = "none" Then
-        GraphicsWindow.BrushColor = "Transparent"
-      ElseIf attr["fill"] <> "" Then
-        GraphicsWindow.BrushColor = attr["fill"]
-      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
-        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
-      Else
-        GraphicsWindow.BrushColor = "Black"
-      EndIf
+      SVG_SetAttr()
       iPoints = 1
       points[iPoints] = attr["points"]
       pt = ""
@@ -663,23 +641,7 @@ Sub SVG_Graphics
       Shapes.Move(shp[nShp], xL, yT)
     ElseIf LDxml.NodeName = "polyline" Then
     ElseIf LDxml.NodeName = "rect" Then
-      If attr["stroke"] = "" Then
-        GraphicsWindow.PenColor = "Transparent"
-      Else
-        GraphicsWindow.PenColor = attr["stroke"]
-      EndIf
-      If attr["stroke-width"] <> "" Then
-        GraphicsWindow.PenWidth = attr["stroke-width"] * scale
-      EndIf
-      If attr["fill"] = "none" Then
-        GraphicsWindow.BrushColor = "Transparent"
-      ElseIf attr["fill"] <> "" Then
-        GraphicsWindow.BrushColor = attr["fill"]
-      ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
-        GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
-      Else
-        GraphicsWindow.BrushColor = "Black"
-      EndIf
+      SVG_SetAttr()
       width = attr["width"] * scale
       height = attr["height"] * scale
       x = attr["x"] * scale
@@ -722,6 +684,34 @@ Sub SVG_PaintServer
   EndIf
 EndSub
 
+Sub SVG_SetAttr
+  If attr["style"] <> "" Then
+    style = LDText.Split(attr["style"], ";")
+    nStyle = Array.GetItemCount(style)
+    For iStyle = 1 To nStyle
+      pair = LDText.Split(style[iStyle], ":")
+      If attr[pair[1]] = "" Then
+        attr[pair[1]] = pair[2]
+      EndIf 
+    EndFor
+  EndIf  
+  If attr["stroke"] = "" Then
+    GraphicsWindow.PenColor = "Transparent"
+  Else
+    GraphicsWindow.PenColor = attr["stroke"]
+  EndIf
+  If attr["stroke-width"] <> "" Then
+    GraphicsWindow.PenWidth = attr["stroke-width"] * scale
+  EndIf
+  If attr["fill"] = "none" Then
+    GraphicsWindow.BrushColor = "Transparent"
+  ElseIf attr["fill"] <> "" Then
+    GraphicsWindow.BrushColor = attr["fill"]
+  Else
+    GraphicsWindow.BrushColor = "Black"
+  EndIf
+EndSub
+
 Sub SVG_TextContent
   If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + LDxml.NodeName + "|") Then
   ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + LDxml.NodeName + "|") Then
@@ -732,4 +722,3 @@ Sub SVG_Uncategorized
   If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
   EndIf
 EndSub
-    
