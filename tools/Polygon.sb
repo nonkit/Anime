@@ -1,9 +1,9 @@
 ' Polygon Editor
-' Version 0.1
-' Copyright © 2018 Nonki Takahashi.  The MIT License.
+' Version 0.2
+' Copyright © 2018-2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
-GraphicsWindow.Title = "Polygon Editor 0.1"
+GraphicsWindow.Title = "Polygon Editor 0.2"
 Not = "False=True;True=False;"
 CR = Text.GetCharacter(13)
 LF = Text.GetCharacter(10)
@@ -54,17 +54,35 @@ Sub AddPos
     shape[nPos] = Shapes.AddRectangle(pw, pw)
     Shapes.Move(shape[nPos], dx - pw / 2, dy - pw / 2)
   Else
-    body = body + " "
     posLast = points[nPos - 1]
     shape[nPos] = Shapes.AddLine(posLast[1] + x0, posLast[2] + y0, dx, dy)
   EndIf
-  body = body + pos[1] + "," + pos[2]
   If pos[1] < xMin Then
     xMin = pos[1]
   EndIf
   If pos[2] < yMin Then
     yMin = pos[2]
   EndIf
+  body = "x='" + xMin + "' y='" + yMin + "' points='"
+  For iPos = 1 To nPos
+    pos = points[iPos]
+    body = body + (pos[1] - xMin) + ","
+    body = body + (pos[2] - yMin)
+    If iPos < nPos Then
+      body = body + " "
+    EndIf
+  EndFor
+EndSub
+
+Sub DrawGrid
+  GraphicsWindow.PenWidth = 0
+  GraphicsWindow.BrushColor = "#EEEEEE"
+  For x = x0 To x0 + fw Step 10
+    GraphicsWindow.FillRectangle(x, y0, 1, fh)
+  EndFor
+  For y = y0 To y0 + fh Step 10
+    GraphicsWindow.FillRectangle(x0, y, fw, 1)
+  EndFor
 EndSub
 
 Sub Form
@@ -81,6 +99,7 @@ Sub Form
   y1 = y0 + fh - 1
   GraphicsWindow.BrushColor = "White"
   GraphicsWindow.FillRectangle(x0, y0, fw, fh)
+  DrawGrid()
   nPos = 0
   xMin = gw
   yMin = gh
@@ -268,7 +287,7 @@ Sub InitSVG
   header = LT + "svg width='" + fw + "' height='" + fh + "'>" + CR + LF
   'header = header + "  " + LT + "rect x='0' y='0' width='" + fw + "' height='" + fh + "'" + CR + LF
   'header = header + "  fill='white' stroke='lightgray'/>" + CR + LF
-  header = header + "  " + LT + "polygon points='"
+  header = header + "  " + LT + "polygon "
   body = ""
   footer = "'" + CR + LF
   footer = footer + "  style='fill:cyan;stroke:" + Text.ConvertToLowerCase(pc) + ";stroke-width:" + pw + ";"

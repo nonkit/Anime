@@ -1,0 +1,75 @@
+' LDShapes.GetProperties
+' Version 0.1
+' Copyright © 2020 Nonki Takahashi.  The MIT Licence.
+' Using LitDev Extension
+
+GraphicsWindow.Title = "LDShapes.GetProperties"
+LF = Text.GetCharacter(10)
+gw = 598
+gh = 428
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+DrawGrid()
+GraphicsWindow.BrushColor = "Blue"
+x = 140
+y = 100
+points = "0,50 180,50 180,0 290,90 180,180 180,130 0,130"
+points = LDText.Split(points, " ")
+n = Array.GetItemCount(points)
+For i = 1 To n
+  point = LDText.Split(points[i], ",")
+  points[i] = point
+  If i = 1 Then
+    xmax = point[1]
+    ymax = point[2]
+  Else
+    xmax = Math.Max(point[1], xmax)
+    ymax = Math.Max(point[2], ymax)
+  EndIf
+EndFor
+shp = LDShapes.AddPolygon(points)
+Shapes.Move(shp, x, y)
+GraphicsWindow.BrushColor = "Black"
+GraphicsWindow.FontName = "Tahoma"
+GraphicsWindow.FontSize = 14
+GraphicsWindow.FontBold = "False"
+tbox = Controls.AddMultiLineTextBox(gw / 2, 10)
+Controls.SetSize(tbox, gw / 2 - 10, gh - 20)
+Shapes.SetOpacity(tbox, 50)
+DumpProperties()
+For a = 0 To 180 Step 15
+  k = LDMath.Cos(a)
+  If Math.Abs(k) < 0.01 Then
+    LDShapes.SetProperty(shp, "FlowDirection", "RightToLeft")
+    Shapes.HideShape(shp)
+  Else
+    Shapes.Zoom(shp, Math.Abs(k), 1)
+    Shapes.ShowShape(shp)
+  EndIf
+  DumpProperties()
+  Program.Delay(200)
+EndFor
+
+Sub DrawGrid
+  GraphicsWindow.PenWidth = 0
+  GraphicsWindow.BrushColor = "#EEEEEE"
+  For x = 0 To gw Step 10
+    GraphicsWindow.FillRectangle(x, 0, 1, gh)
+  EndFor
+  For y = 0 To gh Step 10
+    GraphicsWindow.FillRectangle(0, y, gw, 1)
+  EndFor
+EndSub
+
+Sub DumpProperties
+  value = LDShapes.GetProperties(shp)
+  buf = ""
+  prop = LDArray.CreateFromIndices(value)
+  LDArray.Sort(prop)
+  prop = LDArray.CopyToSBArray(prop)
+  n = Array.GetItemCount(value)
+  For i = 1 To n
+    buf = buf + prop[i] + "=" + value[prop[i]] + LF
+  EndFor
+  Controls.SetTextBoxText(tbox, buf)
+EndSub

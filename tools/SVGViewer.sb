@@ -1,9 +1,9 @@
 ' SVG Viewer
-' Version 0.4b
+' Version 0.5b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
-title = "SVG Viewer 0.4b"
+title = "SVG Viewer 0.5b"
 Init()
 
 While "True"
@@ -27,6 +27,29 @@ While "True"
     Program.Delay(200)
   EndIf
 EndWhile
+
+Sub AddPoint
+  If _points <> "" Then
+    _points = _points + " "
+  EndIf
+  _points = _points + x + "," + y
+EndSub
+
+Sub AddQuadPoints
+  nQ = nQ + 1
+  _q[nQ] = "x=" + x1 + ";y=" + y1 + ";"
+  nQ = nQ + 1
+  _q[nQ] = "x=" + x + ";y=" + y + ";"
+  For t = 0 To 1 Step 0.1
+    x1 = (1 - t) * _q[nQ - 2]["x"] + t * _q[nQ - 1]["x"]
+    y1 = (1 - t) * _q[nQ - 2]["y"] + t * _q[nQ - 1]["y"]
+    x2 = (1 - t) * _q[nQ - 1]["x"] + t * _q[nQ]["x"]
+    y2 = (1 - t) * _q[nQ - 1]["y"] + t * _q[nQ]["y"]
+    x = (1 - t) * x1 + t * x2
+    y = (1 - t) * y1 + t * y2
+    AddPoint()
+  EndFor
+EndSub
 
 Sub Init
   GraphicsWindow.Title = title
@@ -208,39 +231,15 @@ Sub Parse_d
     EndIf
   EndWhile
   For iPoints = 1 To nPoints
-    If attr["stroke"] = "" Then
-      GraphicsWindow.PenColor = "Transparent"
-    Else
-      GraphicsWindow.PenColor = attr["stroke"]
-    EndIf
-    If attr["stroke-width"] <> "" Then
-      GraphicsWindow.PenWidth = attr["stroke-width"] * scale
-    EndIf
-    If attr["fill"] = "none" Then
-      GraphicsWindow.BrushColor = "Transparent"
-    ElseIf attr["fill"] <> "" Then
-      GraphicsWindow.BrushColor = attr["fill"]
-    ElseIf attr["style"] <> "" And Text.StartsWith(attr["style"], "fill:") Then
-      GraphicsWindow.BrushColor = Text.GetSubTextToEnd(attr["style"], 6)
-    Else
-      GraphicsWindow.BrushColor = "Black"
-    EndIf
+    SVG_SetAttr()
     pt = ""
     pts = LDText.Split(points[iPoints], " ")
     nPts = Array.GetItemCount(pts)
-    For iPts = 1 To nPts
-      _pt = LDText.Split(pts[iPts], ",")
-      pt[iPts][1] = Math.Round(_pt[1] * scale)
-      pt[iPts][2] = Math.Round(_pt[2] * scale)
-    EndFor
-    nShp = nShp + 1
-    shp[nShp] = LDShapes.AddPolygon(pt)
-    If attr["fill-rule"] = "evenodd" Then
-      LDShapes.SetProperty(shp[nShp], "FillRule", "EvenOdd")
+    If closed[iPoints] Then
+      Render_Polygon()
     Else
-      LDShapes.SetProperty(shp[nShp], "FillRule", "NonZero")
+      Render_Polyline()
     EndIf
-    Shapes.Move(shp[nShp], xL, yT)
   EndFor
 EndSub
 
@@ -268,11 +267,7 @@ Sub Parse_LineTo
           x = xo + x
           y = yo + y
         EndIf
-        If _points = "" Then
-          _points = x + "," + y
-        Else
-          _points = _points + " " + x + "," + y
-        EndIf
+        AddPoint()
         xo = x
         yo = y
       EndIf
@@ -297,11 +292,7 @@ Sub Parse_LineTo
           x = xo
           y = yo + number
         EndIf
-        If _points = "" Then
-          _points = x + "," + y
-        Else
-          _points = _points + " " + x + "," + y
-        EndIf
+        AddPoint()
         xo = x
         yo = y
       EndIf
@@ -338,11 +329,7 @@ Sub Parse_MoveTo
         x = xo + x
         y = yo + y
       EndIf
-      If _points = "" Then
-        _points = x + "," + y
-      Else
-        _points = _points + " " + x + "," + y
-      EndIf
+      AddPoint()
       xo = x
       yo = y
       xm = x
@@ -404,6 +391,7 @@ Sub Parse_Point
   ' param buf - buffer to parse
   ' param len - length of buf
   ' param p - pointer to buf
+  ' return x, y - coordinates of the point
   ' return p - updated pointer to buf
   ' return match - "True" if match
   _p = p
@@ -412,8 +400,6 @@ Sub Parse_Point
   If match Then
     x = number
     Parse_Space()
-    char = ","
-    Parse_Char()
     match = "True"
   EndIf
   If match Then
@@ -432,10 +418,58 @@ Sub Parse_Quadratic
   ' param p - pointer to buf
   ' return p - updated pointer to buf
   ' return match - "True" if match
+  _p = p
   char = "QqTt"
   Parse_Char()
   If match Then
     cmd = c
+  EndIf
+  matchQ = "False"
+  If Text.IsSubText("Qq", cmd) Then 
+    _q = ""
+    nQ = 1
+    _q[nQ]["x"] = xm
+    _q[nQ]["y"] = ym
+    While match
+      Parse_Space()
+      Parse_Point()   '  control point
+      If cmd = "q" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      x1 = x
+      y1 = y
+      If match Then
+        Parse_Space()
+        Parse_Point() ' end point
+        If cmd = "q" Then
+          x = xo + x
+          y = yo + y
+        EndIf
+      EndIF
+      If match Then
+        matchQ = "True"
+        AddQuadPoints()
+      EndIf
+    EndWhile
+  Else
+    Parse_Space()
+    Parse_Point() ' end point
+    If match Then
+      If cmd = "t" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      x1 = _q[nQ]["x"] + (_q[nQ]["x"] - _q[nQ - 1]["x"])
+      y1 = _q[nQ]["y"] + (_q[nQ]["x"] - _q[nQ - 1]["x"])
+      AddQuadPoints()
+    EndIf
+  EndIf
+  If Not[matchQ] Then
+    p = _p
+  Else
+    points[nPoints] = points[nPoints] + " " + _points
+    match = "True"
   EndIf
 EndSub
 
@@ -446,7 +480,7 @@ Sub Parse_Space
   ' return p - updated pointer to buf
   ' return match - "True" if match
   match = "False"
-  While (p <= len) And Text.IsSubText(" " + VT + CR + LF, Text.GetSubText(buf, p, 1))
+  While (p <= len) And Text.IsSubText(" ," + VT + CR + LF, Text.GetSubText(buf, p, 1))
     match = "True"
     p = p + 1
   EndWhile
@@ -500,6 +534,37 @@ Sub Parse_ViewBox
   EndIf
 EndSub
 
+Sub Render_Polygon
+  For iPts = 1 To nPts
+    _pt = LDText.Split(pts[iPts], ",")
+    pt[iPts][1] = Math.Round(_pt[1] * scale)
+    pt[iPts][2] = Math.Round(_pt[2] * scale)
+  EndFor
+  nShp = nShp + 1
+  shp[nShp] = LDShapes.AddPolygon(pt)
+  If attr["fill-rule"] = "evenodd" Then
+    LDShapes.SetProperty(shp[nShp], "FillRule", "EvenOdd")
+  Else
+    LDShapes.SetProperty(shp[nShp], "FillRule", "NonZero")
+  EndIf
+  Shapes.Move(shp[nShp], xL, yT)
+EndSub
+
+Sub Render_Polyline
+  For iPts = 1 To nPts
+    _pt = LDText.Split(pts[iPts], ",")
+    x2 = Math.Round(_pt[1] * scale)
+    y2 = Math.Round(_pt[2] * scale)
+    If 1 < iPts Then
+      nShp = nShp + 1
+      shp[nShp] = Shapes.AddLine(x1, y1, x2, y2) 
+      Shapes.Move(shp[nShp], xL, yT)
+    EndIf
+    x1 = x2
+    y1 = y2
+  EndFor
+EndSub
+
 Sub SVG_Animation
   If Text.IsSubText("|" + elements["animation"] + "|", "|" + LDxml.NodeName + "|") Then
   EndIf
@@ -521,18 +586,22 @@ Sub SVG_Container
     SVG_Attr()
     nSVG = nSVG + 1
     svg[nSVG] = buf
-    buf = attr["viewBox"]
-    p = 1
-    len = Text.GetLength(buf)
-    Parse_ViewBox()
-    buf = ""
-    If Not[match] Then
-      If attr["width"] <> "" Then
-        scale = vw / attr["width"]
-      Else
-        scale = 1
+    If LDxml.NodeName = "svg" Then
+      buf = attr["viewBox"]
+      p = 1
+      len = Text.GetLength(buf)
+      Parse_ViewBox()
+      If Not[match] Then
+        If attr["width"] <> "" Then
+          scale = vw / attr["width"]
+        Else
+          scale = 1
+        EndIf
       EndIf
+    ElseIf LDxml.NodeName = "g" Then
+      SVG_SetAttr()
     EndIf
+    buf = ""
     LDxml.FirstChild()
     Stack.PushValue("local", level)
     level = level + 1
@@ -619,6 +688,13 @@ Sub SVG_Graphics
       shp[nShp] = Shapes.AddEllipse(2 * rx, 2 * ry)
       Shapes.Move(shp[nShp], xL + cx - rx, yT + cy - ry)
     ElseIf LDxml.NodeName = "line" Then
+      SVG_SetAttr()
+      x1 = attr["x1"] * scale
+      y1 = attr["y1"] * scale
+      x2 = attr["x2"] * scale
+      y1 = attr["y1"] * scale
+      nShp = nShp + 1
+      shp[nShp] = Shapes.AddLine(x1, y1, x2, y2)
     ElseIf LDxml.NodeName = "polygon" Then
       SVG_SetAttr()
       iPoints = 1
@@ -626,20 +702,15 @@ Sub SVG_Graphics
       pt = ""
       pts = LDText.Split(points[iPoints], " ")
       nPts = Array.GetItemCount(pts)
-      For iPts = 1 To nPts
-        _pt = LDText.Split(pts[iPts], ",")
-        pt[iPts][1] = Math.Round(_pt[1] * scale)
-        pt[iPts][2] = Math.Round(_pt[2] * scale)
-      EndFor
-      nShp = nShp + 1
-      shp[nShp] = LDShapes.AddPolygon(pt)
-      If attr["fill-rule"] = "evenodd" Then
-        LDShapes.SetProperty(shp[nShp], "FillRule", "EvenOdd")
-      Else
-        LDShapes.SetProperty(shp[nShp], "FillRule", "NonZero")
-      EndIf
-      Shapes.Move(shp[nShp], xL, yT)
+      Render_Polygon()
     ElseIf LDxml.NodeName = "polyline" Then
+      SVG_SetAttr()
+      iPoints = 1
+      points[iPoints] = attr["points"]
+      pt = ""
+      pts = LDText.Split(points[iPoints], " ")
+      nPts = Array.GetItemCount(pts)
+      Render_Polyline()
     ElseIf LDxml.NodeName = "rect" Then
       SVG_SetAttr()
       width = attr["width"] * scale
@@ -722,3 +793,4 @@ Sub SVG_Uncategorized
   If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
   EndIf
 EndSub
+    

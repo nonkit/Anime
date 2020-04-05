@@ -1,0 +1,55 @@
+' Polygon Parameter Picture
+' Copyright © 2020 Nonki Takahashi.  The MIT Licence.
+
+GraphicsWindow.Title = "Polygon Paramater Picture"
+gw = 598
+gh = 428
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+DrawGrid()
+GraphicsWindow.BrushColor = "Black"
+GraphicsWindow.FontName = "Tahoma"
+GraphicsWindow.FontSize = 14
+GraphicsWindow.FontBold = "False"
+GraphicsWindow.DrawText(20, 10, "position in GraphicsWindow")
+GraphicsWindow.DrawText(30, 40, "(x, y)")
+GraphicsWindow.BrushColor = "Red"
+GraphicsWindow.DrawText(400, 40, "relative position from (x, y)")
+x = 50
+y = 60
+GraphicsWindow.DrawText(260, 400, "width")
+points = "93,115 62,29 160,80 181,0 229,78 290,12 315,83 432,60 366,135 454,216 355,213 401,307 297,243 269,326 206,252 146,336 137,249 29,266 85,187 0,118"
+points = LDText.Split(points, " ")
+n = Array.GetItemCount(points)
+For i = 1 To n
+  point = LDText.Split(points[i], ",")
+  points[i] = point
+  GraphicsWindow.DrawText(x + point[1] - 20, y + point[2], "(x" + i + ", y" + i + ")") 
+  If i = 1 Then
+    xmax = point[1]
+    ymax = point[2]
+  Else
+    xmax = Math.Max(point[1], xmax)
+    ymax = Math.Max(point[2], ymax)
+  EndIf
+EndFor
+GraphicsWindow.DrawText(x + xmax + 10, y + ymax / 2 - 10, "height")
+shp = LDShapes.AddPolygon(points)
+Shapes.Move(shp, x, y)
+Shapes.SetOpacity(shp, 50)
+GraphicsWindow.BrushColor = "Transparent"
+GraphicsWindow.PenColor = "Black"
+GraphicsWindow.PenWidth = 1
+shp = Shapes.AddRectangle(xmax, ymax)
+Shapes.Move(shp, x, y)
+
+Sub DrawGrid
+  GraphicsWindow.PenWidth = 0
+  GraphicsWindow.BrushColor = "#EEEEEE"
+  For x = 0 To gw Step 10
+    GraphicsWindow.FillRectangle(x, 0, 1, gh)
+  EndFor
+  For y = 0 To gh Step 10
+    GraphicsWindow.FillRectangle(0, y, gw, 1)
+  EndFor
+EndSub
