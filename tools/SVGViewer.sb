@@ -1,16 +1,16 @@
 ' SVG Viewer
-' Version 0.5b
+' Version 0.6b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
-title = "SVG Viewer 0.5b"
+title = "SVG Viewer 0.6b"
 Init()
 
 While "True"
-  If cboxChanged Then
+  If menuClicked Then
+    path = LDDialogs.OpenFile("SVG", dir)
     RemoveShapes()
     GraphicsWindow.Title = title + " - loading..."
-    path = svgs[LDControls.ComboBoxGetSelected(cbox)]
     nSVG = 0
     level = 1
     buf = ""
@@ -19,14 +19,39 @@ While "True"
     yo = 0
     LDxml.Open(path)
     LDxml.FirstNode()
+    nodeName = LDxml.NodeName
     SVG_Container()
     ShowSVG()
-    cboxChanged = "False"
+    menuClicked = "False"
     GraphicsWindow.Title = title
   Else
     Program.Delay(200)
   EndIf
 EndWhile
+
+Sub AddCubicPoints
+  nC = nC + 1
+  _c[nC] = "x=" + x1 + ";y=" + y1 + ";"
+  nc = nC + 1
+  _c[nC] = "x=" + x2 + ";y=" + y2 + ";"
+  nc = nC + 1
+  _c[nC] = "x=" + x + ";y=" + y + ";"
+  For t = 0 To 1 Step 0.05
+    x1 = (1 - t) * _c[nC - 3]["x"] + t * _c[nC - 2]["x"]
+    y1 = (1 - t) * _c[nC - 3]["y"] + t * _c[nC - 2]["y"]
+    x2 = (1 - t) * _c[nC - 2]["x"] + t * _c[nC - 1]["x"]
+    y2 = (1 - t) * _c[nC - 2]["y"] + t * _c[nC - 1]["y"]
+    x3 = (1 - t) * _c[nC - 1]["x"] + t * _c[nC]["x"]
+    y3 = (1 - t) * _c[nC - 1]["y"] + t * _c[nC]["y"]
+    x12 = (1 - t) * x1 + t * x2
+    y12 = (1 - t) * y1 + t * y2
+    x23 = (1 - t) * x2 + t * x3
+    y23 = (1 - t) * y2 + t * y3
+    x = (1 - t) * x12 + t * x23
+    y = (1 - t) * y12 + t * y23
+    AddPoint()
+  EndFor
+EndSub
 
 Sub AddPoint
   If _points <> "" Then
@@ -40,7 +65,7 @@ Sub AddQuadPoints
   _q[nQ] = "x=" + x1 + ";y=" + y1 + ";"
   nQ = nQ + 1
   _q[nQ] = "x=" + x + ";y=" + y + ";"
-  For t = 0 To 1 Step 0.1
+  For t = 0 To 1 Step 0.05
     x1 = (1 - t) * _q[nQ - 2]["x"] + t * _q[nQ - 1]["x"]
     y1 = (1 - t) * _q[nQ - 2]["y"] + t * _q[nQ - 1]["y"]
     x2 = (1 - t) * _q[nQ - 1]["x"] + t * _q[nQ]["x"]
@@ -70,14 +95,18 @@ Sub Init
   GraphicsWindow.Height = gh
   GraphicsWindow.BackgroundColor = "LightGray"
   
-  ' add combobox
+  ' add menu
+  menuList["File"] = "Main"
+  menuList["Open"] = "File"
   GraphicsWindow.BrushColor = "Black"
-  files = File.GetFiles(dir)
-  SelectSVG()
-  cbox = LDControls.AddComboBox(svgs, gw - 20, gh - 50)
-  Controls.Move(cbox, 10, 10)
+  GraphicsWindow.FontName = "Segoe UI"
+  GraphicsWindow.FontBold = "False"
+  menu = LDControls.AddMenu(gw - 20, 20, menuList, "", "")
+  Controls.Move(menu, 10, 10)
   
   ' add textbox
+  GraphicsWindow.FontName = "Consolas"
+  GraphicsWindow.FontBold = "True"
   tbox = Controls.AddMultiLineTextBox(10, 10)
   Controls.Move(tbox, vw + 20, 40)
   Controls.SetSize(tbox, gw - vw - 30, gh - 50)
@@ -109,11 +138,11 @@ Sub Init
   elements["textContent"] = elements["textOtherContent"] + "|" + elements["textContentChild"]
   elements["uncategorized"] = "clipPath|color-profile|cursor*|filter|foreignObject|hatchpath|meshpatch|meshrow|script|style|view"
   
-  LDControls.ComboBoxItemChanged = OnCboxChanged
+  LDControls.MenuClicked = OnMenuClicked
 EndSub
 
-Sub OnCboxChanged
-  cboxChanged = "True"
+Sub OnMenuClicked
+  menuClicked = "True"
 EndSub
 
 Sub RemoveShapes
@@ -121,17 +150,6 @@ Sub RemoveShapes
     Shapes.Remove(shp[iShp])
   EndFor
   nShp = 0
-EndSub
-
-Sub SelectSVG
-  nSVG = 0
-  nFile = Array.GetItemCount(files)
-  For iFile = 1 To nFile
-    If Text.EndsWith(files[iFile], ".svg") Then
-      nSVG = nSVG + 1 
-      svgs[nSVG] = files[iFile]
-    EndIf
-  EndFor
 EndSub
 
 Sub ShowSVG
@@ -193,10 +211,68 @@ Sub Parse_Cubic
   ' param p - pointer to buf
   ' return p - updated pointer to buf
   ' return match - "True" if match
+  _p = p
   char = "CcSs"
   Parse_Char()
   If match Then
     cmd = c
+  EndIf
+  matchC = "False"
+  If Text.IsSubText("Cc", cmd) Then 
+    _c = ""
+    nC = 1
+    _c[nC]["x"] = xm
+    _c[nC]["y"] = ym
+    While match
+      Parse_Space()
+      Parse_Point()   '  control point 1
+      If cmd = "c" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      If match Then
+        x1 = x
+        y1 = y
+        Parse_Space()
+        Parse_Point() ' control point 2
+        If cmd = "c" Then
+          x = xo + x
+          y = yo + y
+        EndIf
+      EndIF
+      If match Then
+        x2 = x
+        y2 = y
+        Parse_Space()
+        Parse_Point() ' end point
+        If cmd = "c" Then
+          x = xo + x
+          y = yo + y
+        EndIf
+      EndIF
+      If match Then
+        matchC = "True"
+        AddCubicPoints()
+      EndIf
+    EndWhile
+  Else  ' S or s
+    Parse_Space()
+    Parse_Point() ' end point
+    If match Then
+      If cmd = "s" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      x1 = _c[nC]["x"] + (_c[nC]["x"] - _c[nC - 1]["x"])
+      y1 = _c[nC]["y"] + (_c[nC]["x"] - _c[nC - 1]["x"])
+      AddCubicPoints()
+    EndIf
+  EndIf
+  If Not[matchC] Then
+    p = _p
+  Else
+    points[nPoints] = points[nPoints] + " " + _points
+    match = "True"
   EndIf
 EndSub
 
@@ -452,7 +528,7 @@ Sub Parse_Quadratic
         AddQuadPoints()
       EndIf
     EndWhile
-  Else
+  Else  ' T or t
     Parse_Space()
     Parse_Point() ' end point
     If match Then
@@ -566,7 +642,7 @@ Sub Render_Polyline
 EndSub
 
 Sub SVG_Animation
-  If Text.IsSubText("|" + elements["animation"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["animation"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
@@ -580,13 +656,13 @@ Sub SVG_Attr
 EndSub
 
 Sub SVG_Container
-  If Text.IsSubText("|" + elements["container"] + "|", "|" + LDxml.NodeName + "|") Then
-    buf = buf + "element=" + LDxml.NodeName + ";"
+  If Text.IsSubText("|" + elements["container"] + "|", "|" + nodeName + "|") Then
+    buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
     SVG_Attr()
     nSVG = nSVG + 1
     svg[nSVG] = buf
-    If LDxml.NodeName = "svg" Then
+    If nodeName = "svg" Then
       buf = attr["viewBox"]
       p = 1
       len = Text.GetLength(buf)
@@ -598,11 +674,12 @@ Sub SVG_Container
           scale = 1
         EndIf
       EndIf
-    ElseIf LDxml.NodeName = "g" Then
+    ElseIf nodeName = "g" Then
       SVG_SetAttr()
     EndIf
     buf = ""
     LDxml.FirstChild()
+    nodeName = LDxml.NodeName
     Stack.PushValue("local", level)
     level = level + 1
     match = "True"
@@ -614,8 +691,16 @@ Sub SVG_Container
       If Not[match] Then
         SVG_Container()
       EndIf
+      If Not[match] Then
+        If Text.StartsWith(nodeName, "#") Then
+          match = "True"  ' ignore this node
+        Else
+          TextWindow.WriteLine("unknown node: " + nodeName)
+        EndIf
+      EndIf
       If match Then
         result = LDxml.NextSibling()
+        nodeName = LDxml.NodeName
         If result = "FAILED" Then
           match = "False"
         EndIf
@@ -629,10 +714,10 @@ Sub SVG_Container
 EndSub
 
 Sub SVG_Descriptive
-  If Text.IsSubText("|" + elements["descriptive"] + "|", "|" + LDxml.NodeName + "|") Then
-    buf = buf + "element=" + LDxml.NodeName + ";"
+  If Text.IsSubText("|" + elements["descriptive"] + "|", "|" + nodeName + "|") Then
+    buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
-    If LDxml.NodeName = "title" Then
+    If nodeName = "title" Then
       buf = buf + "title=" + LDxml.NodeInnerText + ";"
     Else
       SVG_Attr()
@@ -647,30 +732,30 @@ Sub SVG_Descriptive
 EndSub
 
 Sub SVG_FilterPrimitive
-  If Text.IsSubText("|" + elements["filterPrimitive"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["filterPrimitive"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
 Sub SVG_Font
-  If Text.IsSubText("|" + elements["font"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["font"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
 Sub SVG_Gradient
-  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
 Sub SVG_Graphics
-  If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + nodeName + "|") Then
     ' Basic Shapes 
-    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
     SVG_Attr()
     nSVG = nSVG + 1
     svg[nSVG] = buf
     buf = ""
-    If LDxml.NodeName = "circle" Then
+    If nodeName = "circle" Then
       SVG_SetAttr()
       cx = attr["cx"] * scale
       cy = attr["cy"] * scale
@@ -678,7 +763,7 @@ Sub SVG_Graphics
       nShp = nShp + 1
       shp[nShp] = Shapes.AddEllipse(2 * r, 2 * r)
       Shapes.Move(shp[nShp], xL + cx - r, yT + cy - r)
-    ElseIf LDxml.NodeName = "ellipse" Then
+    ElseIf nodeName = "ellipse" Then
       SVG_SetAttr()
       cx = attr["cx"] * scale
       cy = attr["cy"] * scale
@@ -687,7 +772,7 @@ Sub SVG_Graphics
       nShp = nShp + 1
       shp[nShp] = Shapes.AddEllipse(2 * rx, 2 * ry)
       Shapes.Move(shp[nShp], xL + cx - rx, yT + cy - ry)
-    ElseIf LDxml.NodeName = "line" Then
+    ElseIf nodeName = "line" Then
       SVG_SetAttr()
       x1 = attr["x1"] * scale
       y1 = attr["y1"] * scale
@@ -695,7 +780,7 @@ Sub SVG_Graphics
       y1 = attr["y1"] * scale
       nShp = nShp + 1
       shp[nShp] = Shapes.AddLine(x1, y1, x2, y2)
-    ElseIf LDxml.NodeName = "polygon" Then
+    ElseIf nodeName = "polygon" Then
       SVG_SetAttr()
       iPoints = 1
       points[iPoints] = attr["points"]
@@ -703,7 +788,7 @@ Sub SVG_Graphics
       pts = LDText.Split(points[iPoints], " ")
       nPts = Array.GetItemCount(pts)
       Render_Polygon()
-    ElseIf LDxml.NodeName = "polyline" Then
+    ElseIf nodeName = "polyline" Then
       SVG_SetAttr()
       iPoints = 1
       points[iPoints] = attr["points"]
@@ -711,7 +796,7 @@ Sub SVG_Graphics
       pts = LDText.Split(points[iPoints], " ")
       nPts = Array.GetItemCount(pts)
       Render_Polyline()
-    ElseIf LDxml.NodeName = "rect" Then
+    ElseIf nodeName = "rect" Then
       SVG_SetAttr()
       width = attr["width"] * scale
       height = attr["height"] * scale
@@ -722,22 +807,22 @@ Sub SVG_Graphics
       Shapes.Move(shp[nShp], xL + x, yT + y)
     EndIf
     match = "True"
-  ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + LDxml.NodeName + "|") Then
+  ElseIf Text.IsSubText("|" + elements["graphicsReferencing"] + "|", "|" + nodeName + "|") Then
     ' Graphics Referencing
-  ElseIf Text.IsSubText("|" + elements["otherGraphics"] + "|", "|" + LDxml.NodeName + "|") Then
+  ElseIf Text.IsSubText("|" + elements["otherGraphics"] + "|", "|" + nodeName + "|") Then
     ' other Graphics
-    buf = buf + "element=" + LDxml.NodeName + ";"
+    buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
     SVG_Attr()
     nSVG = nSVG + 1
     svg[nSVG] = buf
     buf = ""
-    If LDxml.NodeName = "image" Then
-    ElseIf LDxml.NodeName = "path" Then
+    If nodeName = "image" Then
+    ElseIf nodeName = "path" Then
       buf = attr["d"]
       Parse_d()
       buf = ""
-    ElseIf LDxml.NodeName = "text" Then
+    ElseIf nodeName = "text" Then
     EndIf
     match = "True"
   Else
@@ -746,12 +831,12 @@ Sub SVG_Graphics
 EndSub
 
 Sub SVG_LightSource
-  If Text.IsSubText("|" + elements["lightSource"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["lightSource"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
 Sub SVG_PaintServer
-  If Text.IsSubText("|" + elements["paintServer"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["paintServer"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
@@ -784,13 +869,13 @@ Sub SVG_SetAttr
 EndSub
 
 Sub SVG_TextContent
-  If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + LDxml.NodeName + "|") Then
-  ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["textContentChild"] + "|", "|" + nodeName + "|") Then
+  ElseIf Text.IsSubText("|" + elements["textContentOther"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
 
 Sub SVG_Uncategorized
-  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + LDxml.NodeName + "|") Then
+  If Text.IsSubText("|" + elements["gradient"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
     
