@@ -3,5 +3,8 @@
 *.dll
 *.pdb
 
+# Temporary files
+*.settings
+
 # Under construction
 毬と殿さま

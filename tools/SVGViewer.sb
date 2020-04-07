@@ -1,33 +1,105 @@
 ' SVG Viewer
-' Version 0.6b
+' Version 0.7b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
-title = "SVG Viewer 0.6b"
+title = "SVG Viewer 0.7b"
 Init()
 
 While "True"
   If menuClicked Then
     path = LDDialogs.OpenFile("SVG", dir)
-    RemoveShapes()
-    GraphicsWindow.Title = title + " - loading..."
-    nSVG = 0
-    level = 1
-    buf = ""
-    len = 0
-    xo = 0
-    yo = 0
-    LDxml.Open(path)
-    LDxml.FirstNode()
-    nodeName = LDxml.NodeName
-    SVG_Container()
-    ShowSVG()
+    If path <> "" Then
+      GraphicsWindow.Title = title + " - loading..."
+      settings["dir"] = LDFile.GetFolder(path)
+      File.WriteContents(sfile, settings)
+      RemoveShapes()
+      nSVG = 0
+      level = 1
+      buf = ""
+      len = 0
+      LDxml.Open(path)
+      LDxml.FirstNode()
+      nodeName = LDxml.NodeName
+      SVG_Container()
+      ShowSVG()
+      GraphicsWindow.Title = title
+    EndIf
     menuClicked = "False"
-    GraphicsWindow.Title = title
   Else
     Program.Delay(200)
   EndIf
 EndWhile
+
+Sub AddArcPoints
+  ' param ps[] - start point
+  ' param pe[] - end point
+  ' param rx - radius x
+  ' param ry - radius y
+  ' param x_axis_rotation - rotation angle [degree] (not supported yet)
+  ' param large_arc_flag - 1 if angle > 180°
+  ' param sweep_flag - 1 if positive angle
+  _x = (ps["x"] + pe["x"]) / 2
+  _y = (ps["y"] + pe["y"]) / 2
+  dx = (ps["x"] - pe["x"])
+  dy = (ps["y"] - pe["y"])
+  d = Math.SquareRoot(dx * dx + dy * dy)
+  da = 10
+  r = d / 2
+  k = rx / r
+  If k < 1 Then
+    match = "False"
+  Else
+    _d = k * d
+    _r = _d / 2
+    If large_arc_flag = sweep_flag Then
+      cx = _x - (dy / 2) * (k * r * Math.Sin(Math.ArcCos(1 / k))) / r
+      cy = _y + (dx / 2) * (k * r * Math.Sin(Math.ArcCos(1 / k))) / r
+    Else
+      cx = _x + (dy / 2) * (k * r * Math.Sin(Math.ArcCos(1 / k))) / r
+      cy = _y - (dx / 2) * (k * r * Math.Sin(Math.ArcCos(1 / k))) / r
+    EndIf
+    x = ps["x"] - cx
+    y = ps["y"] - cy
+    Math_CartesianToPolar()
+    as = a
+    x = pe["x"] - cx
+    y = pe["y"] - cy
+    Math_CartesianToPolar()
+    ae = a
+    If sweep_flag = 1 Then
+      If ae < as Then
+        ae = ae + 360
+      EndIf
+      For a = as To ae Step da
+        x = cx + rx * LDMath.Cos(a)
+        y = cy + ry * LDMath.Sin(a)
+        AddPoint()
+      EndFor
+      If a < ae + da Then
+        x = cx + rx * LDMath.Cos(ae)
+        y = cy + ry * LDMath.Sin(ae)
+        AddPoint()
+      EndIf
+    Else ' sweep_flag = 0
+      If as < ae Then
+        as = as + 360
+      EndIf
+      For a = as To ae Step -da
+        x = cx + rx * LDMath.Cos(a)
+        y = cy + ry * LDMath.Sin(a)
+        AddPoint()
+      EndFor
+      If ae - da < a Then
+        x = cx + rx * LDMath.Cos(ae)
+        y = cy + ry * LDMath.Sin(ae)
+        AddPoint()
+      EndIf
+    EndIf
+    xo = x
+    yo = y
+  EndIf
+EndSub
 
 Sub AddCubicPoints
   nC = nC + 1
@@ -51,6 +123,8 @@ Sub AddCubicPoints
     y = (1 - t) * y12 + t * y23
     AddPoint()
   EndFor
+  xo = x
+  yo = y
 EndSub
 
 Sub AddPoint
@@ -74,12 +148,20 @@ Sub AddQuadPoints
     y = (1 - t) * y1 + t * y2
     AddPoint()
   EndFor
+  xo = x
+  yo = y
 EndSub
 
 Sub Init
   GraphicsWindow.Title = title
   Not = "False=True;True=False;"
-  dir = "C:\temp"
+  sfile = File.GetSettingsFilePath()
+  If LDFile.Exists(sfile) Then
+    settings = File.ReadContents(sfile)
+    dir = settings["dir"]
+  Else
+    dir = Program.Directory
+  EndIf
   VT = Text.GetCharacter(9)
   CR = Text.GetCharacter(13)
   LF = Text.GetCharacter(10)
@@ -156,8 +238,31 @@ Sub ShowSVG
   buf = ""
   For iSVG = 1 To nSVG
     buf = buf + "svg[" + iSVG + "] = " + WQ + svg[iSVG] + WQ + LF
-  EndFor    
+  EndFor
   Controls.SetTextBoxText(tbox, buf)
+EndSub
+
+Sub Math_CartesianToPolar
+  ' Math | convert Cartesian coodinate to polar coordinate
+  ' param x, y - Cartesian coordinate
+  ' return r, a - polar Coordinate (0<=a<360)
+  r = Math.SquareRoot(x * x + y * y)
+  If x = 0 And y > 0 Then
+    a = 90 ' [degree]
+  ElseIf x = 0 And y < 0 Then
+    a = -90
+  ElseIf x = 0 And y = 0 Then
+    a = 0
+  Else
+    a = Math.ArcTan(y / x) * 180 / Math.Pi
+  EndIf
+  ' at this point -90<=a<=90
+  If x < 0 Then
+    a = a + 180
+  ElseIf x >= 0 And y < 0 Then
+    a = a + 360
+  EndIf
+  ' at this point 0<=a<360
 EndSub
 
 Sub Parse_Arc
@@ -166,10 +271,55 @@ Sub Parse_Arc
   ' param p - pointer to buf
   ' return p - updated pointer to buf
   ' return match - "True" if match
+  _p = p
   char = "Aa"
   Parse_Char()
   If match Then
     cmd = c
+  EndIf
+  matchA = "False"
+  ps = "x=" + xo + ";y=" + yo + ";" ' start point
+  While match
+    Parse_Space()
+    Parse_Point()     ' rx, ry
+    If match Then
+      rx = x
+      ry = y
+      Parse_Space()
+      Parse_Number()  ' x-axis-rotation
+    EndIf
+    If match Then
+      x_axis_rotation = number
+      Parse_Space()
+      char = "01"
+      Parse_Char()    ' large-arc-flag
+    EndIf
+    If match Then
+      large_arc_flag = c
+      Parse_Space()
+      char = "01"
+      Parse_Char()    ' sweep-flag
+    EndIf
+    If match Then
+      sweep_flag = c
+      Parse_Space()
+      Parse_Point()   ' end point
+    EndIf
+    If match Then
+      If cmd = "a" Then
+        x = xo + x
+        y = yo + y
+      EndIf
+      matchA = "True"
+      pe = "x=" + x + ";y=" + y + ";"
+      AddArcPoints()
+    EndIf
+  EndWhile
+  If Not[matchA] Then
+    p = _p
+  Else
+    points[nPoints] = points[nPoints] + " " + _points
+    match = "True"
   EndIf
 EndSub
 
@@ -199,8 +349,8 @@ Sub Parse_ClosePath
   Parse_Char()
   If match Then
     closed[nPoints] = "True"
-    xo = xm
-    yo = ym
+    xo = xz
+    yo = yz
     cmd = c
   EndIf
 EndSub
@@ -218,19 +368,19 @@ Sub Parse_Cubic
     cmd = c
   EndIf
   matchC = "False"
-  If Text.IsSubText("Cc", cmd) Then 
+  If Text.IsSubText("Cc", cmd) Then
     _c = ""
     nC = 1
-    _c[nC]["x"] = xm
-    _c[nC]["y"] = ym
+    _c[nC]["x"] = xo
+    _c[nC]["y"] = yo
     While match
       Parse_Space()
       Parse_Point()   '  control point 1
-      If cmd = "c" Then
-        x = xo + x
-        y = yo + y
-      EndIf
       If match Then
+        If cmd = "c" Then
+          x = xo + x
+          y = yo + y
+        EndIf
         x1 = x
         y1 = y
         Parse_Space()
@@ -239,7 +389,7 @@ Sub Parse_Cubic
           x = xo + x
           y = yo + y
         EndIf
-      EndIF
+      EndIf
       If match Then
         x2 = x
         y2 = y
@@ -249,7 +399,7 @@ Sub Parse_Cubic
           x = xo + x
           y = yo + y
         EndIf
-      EndIF
+      EndIf
       If match Then
         matchC = "True"
         AddCubicPoints()
@@ -287,6 +437,8 @@ Sub Parse_d
   points = ""
   closed = ""
   nPoints = 0
+  xo = 0
+  yo = 0
   While p <= len
     Parse_Space()
     Parse_MoveTo()
@@ -306,8 +458,8 @@ Sub Parse_d
       Parse_ClosePath()
     EndIf
   EndWhile
+  SVG_SetAttr()
   For iPoints = 1 To nPoints
-    SVG_SetAttr()
     pt = ""
     pts = LDText.Split(points[iPoints], " ")
     nPts = Array.GetItemCount(pts)
@@ -408,17 +560,17 @@ Sub Parse_MoveTo
       AddPoint()
       xo = x
       yo = y
-      xm = x
-      ym = y
+      xz = x
+      yz = y
     EndIf
   EndWhile
   If Not[matchM] Then
     p = _p
   Else
+    match = "True"
     nPoints = nPoints + 1
     points[nPoints] = _points
     closed[nPoints] = "False"
-    match = "True"
   EndIf
 EndSub
 
@@ -426,6 +578,7 @@ Sub Parse_Number
   ' param buf - buffer to parse
   ' param len - length of buf
   ' param p - pointer to buf
+  ' return number - parsed
   ' return p - updated pointer to buf
   ' return match - "True" if match
   _p = p
@@ -448,6 +601,9 @@ Sub Parse_Number
   EndWhile
   char = "."
   Parse_Char()
+  If match Then
+    number = Text.Append(number, c)
+  EndIf
   char = "0123456789"
   While match
     Parse_Char()
@@ -501,11 +657,11 @@ Sub Parse_Quadratic
     cmd = c
   EndIf
   matchQ = "False"
-  If Text.IsSubText("Qq", cmd) Then 
+  If Text.IsSubText("Qq", cmd) Then
     _q = ""
     nQ = 1
-    _q[nQ]["x"] = xm
-    _q[nQ]["y"] = ym
+    _q[nQ]["x"] = xo
+    _q[nQ]["y"] = yo
     While match
       Parse_Space()
       Parse_Point()   '  control point
@@ -522,7 +678,7 @@ Sub Parse_Quadratic
           x = xo + x
           y = yo + y
         EndIf
-      EndIF
+      EndIf
       If match Then
         matchQ = "True"
         AddQuadPoints()
@@ -633,7 +789,7 @@ Sub Render_Polyline
     y2 = Math.Round(_pt[2] * scale)
     If 1 < iPts Then
       nShp = nShp + 1
-      shp[nShp] = Shapes.AddLine(x1, y1, x2, y2) 
+      shp[nShp] = Shapes.AddLine(x1, y1, x2, y2)
       Shapes.Move(shp[nShp], xL, yT)
     EndIf
     x1 = x2
@@ -660,6 +816,7 @@ Sub SVG_Container
     buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
     SVG_Attr()
+    id = attr["id"]
     nSVG = nSVG + 1
     svg[nSVG] = buf
     If nodeName = "svg" Then
@@ -677,36 +834,41 @@ Sub SVG_Container
     ElseIf nodeName = "g" Then
       SVG_SetAttr()
     EndIf
-    buf = ""
-    LDxml.FirstChild()
-    nodeName = LDxml.NodeName
-    Stack.PushValue("local", level)
-    level = level + 1
-    match = "True"
-    While match
-      SVG_Descriptive()
-      If Not[match] Then
-        SVG_Graphics()
-      EndIf
-      If Not[match] Then
-        SVG_Container()
-      EndIf
-      If Not[match] Then
-        If Text.StartsWith(nodeName, "#") Then
-          match = "True"  ' ignore this node
-        Else
-          TextWindow.WriteLine("unknown node: " + nodeName)
+    If 0 < LDxml.ChildrenCount Then
+      buf = ""
+      LDxml.FirstChild()
+      nodeName = LDxml.NodeName
+      Stack.PushValue("local", level)
+      level = level + 1
+      match = "True"
+      While match
+        SVG_Descriptive()
+        If Not[match] Then
+          SVG_Graphics()
         EndIf
-      EndIf
-      If match Then
-        result = LDxml.NextSibling()
-        nodeName = LDxml.NodeName
-        If result = "FAILED" Then
-          match = "False"
+        If Not[match] Then
+          SVG_Container()
         EndIf
-      EndIf
-    EndWhile
-    level = Stack.PopValue("local")
+        If Not[match] Then
+          If Text.StartsWith(nodeName, "#") Then
+            match = "True"  ' ignore this node
+          Else
+            TextWindow.WriteLine("unknown node: " + nodeName)
+            match = "True"  ' ignore this node
+          EndIf
+        EndIf
+        If match Then
+          result = LDxml.NextSibling()
+          If result = "FAILED" Then
+            match = "False"
+          Else
+            nodeName = LDxml.NodeName
+          EndIf
+        EndIf
+      EndWhile
+      LDxml.Parent()
+      level = Stack.PopValue("local")
+    EndIf
     match = "True"
   Else
     match = "False"
@@ -748,7 +910,7 @@ EndSub
 
 Sub SVG_Graphics
   If Text.IsSubText("|" + elements["basicShapes"] + "|", "|" + nodeName + "|") Then
-    ' Basic Shapes 
+    ' Basic Shapes
     buf = buf + "element=" + nodeName + ";"
     buf = buf + "level=" + level + ";"
     SVG_Attr()
@@ -847,11 +1009,11 @@ Sub SVG_SetAttr
     For iStyle = 1 To nStyle
       pair = LDText.Split(style[iStyle], ":")
       If attr[pair[1]] = "" Then
-        attr[pair[1]] = pair[2]
+        attr[pair[1]] = LDText.Replace(pair[2], "\", "")
       EndIf 
     EndFor
-  EndIf  
-  If attr["stroke"] = "" Then
+  EndIf
+  If (attr["stroke"] = "") Or (attr["stroke"] = "none") Then
     GraphicsWindow.PenColor = "Transparent"
   Else
     GraphicsWindow.PenColor = attr["stroke"]
@@ -878,4 +1040,3 @@ Sub SVG_Uncategorized
   If Text.IsSubText("|" + elements["gradient"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
-    
