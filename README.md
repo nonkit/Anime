@@ -9,9 +9,8 @@ Following files are main source.  Subfolders contain output samples.
 
 - Anime.sb - Anime v0.5a ([history](History.md))
 - Normalize.sb - Shapes Normalize Sample v0.1
-- Pilot.sb - Anime Pilot v0.1
+- Pilot.sb - Anime Pilot v0.2
 - Rocket.sb - Rocket Sprite v0.1
-- stars.png - Stars Image File 598 x 428
 
 ## See Also
 

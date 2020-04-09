@@ -1,0 +1,315 @@
+' Anime Icon
+' Copyright © 2020 Nonki Takahashi.  The MIT License.
+
+GraphicsWindow.Title = "Anime Icon"
+SB_Workaround()
+gw = 598
+gh = 598
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+GraphicsWindow.BackgroundColor = "#CCDDFF"
+' initialize shapes
+Shapes_Init()
+' add shapes
+scale = 0.85
+angle = 0
+name = "Car 2"
+Sprite_Add()
+name = "Car 1"
+Sprite_Add()
+i = nSprite
+x = 180
+y = -71
+Sprite_Move()
+Shapes_Init_Frame()
+' add shapes
+scale = 1
+name = "Frame"
+Sprite_Add()
+path = Program.Directory + "\AnimeIcon600.png"
+LDGraphicsWindow.Capture(path, "False")
+
+Sub Math_CartesianToPolar
+  ' Math | convert cartesian coodinate to polar coordinate
+  ' param x, y - cartesian coordinate
+  ' return r, a - polar coordinate
+  r = Math.SquareRoot(x * x + y * y)
+  If x = 0 And y > 0 Then
+    a = 90 ' [degree]
+  ElseIf x = 0 And y < 0 Then
+    a = -90
+  ElseIf x = 0 Then
+    a = 0
+  Else
+    a = Math.ArcTan(y / x) * 180 / Math.Pi
+  EndIf
+  If x < 0 Then
+    a = a + 180
+  ElseIf x > 0 And y < 0 Then
+    a = a + 360
+  EndIf
+EndSub
+
+Sub SB_RotateWorkaround
+  ' Small Basic | rotate workaround For Silverlight
+  ' param shp - current shape
+  ' param x, y - original coordinate
+  ' param _alpha - angle [radian]
+  ' returns x, y - workaround coordinate
+  If shp["func"] = "tri" Then
+    x1 = -Math.Floor(shp["x3"] / 2)
+    y1 = -Math.Floor(shp["y3"] / 2)
+  ElseIf shp["func"] = "line" Then
+    x1 = -Math.Floor(Math.Abs(shp["x1"] - shp["x2"]) / 2)
+    y1 = -Math.Floor(Math.Abs(shp["y1"] - shp["y2"]) / 2)
+  EndIf
+  ox = x - x1
+  oy = y - y1
+  x = x1 * Math.Cos(_alpha) - y1 * Math.Sin(_alpha) + ox
+  y = x1 * Math.Sin(_alpha) + y1 * Math.Cos(_alpha) + oy
+EndSub
+
+Sub SB_Workaround
+  ' Small Basic | workaround for Silverlight / SBD
+  ' return silverlight - "True" if in remote
+  ' return sbd - "True" if Small Basic Desktop
+  color = GraphicsWindow.GetPixel(0, 0)
+  sbd = "False"
+  If Text.GetLength(color) > 7 Then
+    silverlight = "True"
+    msWait = 300
+  Else
+    silverlight = "False"
+    _gw = GraphicsWindow.Width
+    _gh = GraphicsWindow.Height
+    If (_gw = 624) And (_gh = 441) Then
+      sbd = "True"
+    EndIf
+  EndIf
+EndSub
+
+Sub Shapes_CalcWidthAndHeight
+  ' Shapes | calculate total width and height of shapes
+  ' param shape[] - shape array
+  ' return shWidth, shHeight - total size of shapes
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    If shp["func"] = "tri" Or shp["func"] = "line" Then
+      xmin = shp["x1"]
+      xmax = shp["x1"]
+      ymin = shp["y1"]
+      ymax = shp["y1"]
+      If shp["x2"] < xmin Then
+        xmin = shp["x2"]
+      EndIf
+      If xmax < shp["x2"] Then
+        xmax = shp["x2"]
+      EndIf
+      If shp["y2"] < ymin Then
+        ymin = shp["y2"]
+      EndIf
+      If ymax < shp["y2"] Then
+        ymax = shp["y2"]
+      EndIf
+      If shp["func"] = "tri" Then
+        If shp["x3"] < xmin Then
+          xmin = shp["x3"]
+        EndIf
+        If xmax < shp["x3"] Then
+          xmax = shp["x3"]
+        EndIf
+        If shp["y3"] < ymin Then
+          ymin = shp["y3"]
+        EndIf
+        If ymax < shp["y3"] Then
+          ymax = shp["y3"]
+        EndIf
+      EndIf
+      shp["width"] = xmax - xmin
+      shp["height"] = ymax - ymin
+    EndIf
+    If i = 1 Then
+      shWidth = shp["x"] + shp["width"]
+      shHeight = shp["y"] + shp["height"]
+    Else
+      If shWidth < shp["x"] + shp["width"] Then
+        shWidth = shp["x"] + shp["width"]
+      EndIf
+      If shHeight < shp["y"] + shp["height"] Then
+        shHeight = shp["y"] + shp["height"]
+      EndIf
+    EndIf
+    shape[i] = shp
+  EndFor
+EndSub
+
+Sub Shapes_Init
+  ' Shapes | Initialize shapes data
+  ' return shX, shY - current position of shapes
+  ' return shape - array of shapes
+  shX = 30  ' x offset
+  shY = 218 ' y offset
+  shape = ""
+  shape[1] = "func=ell;x=100;y=250;width=50;height=50;bc=#99FFFFFF;pw=0;name=light;"
+  shape[2] = "func=ell;x=250;y=150;width=200;height=200;bc=#99FFFFFF;pw=0;name=top;"
+  shape[3] = "func=ell;x=500;y=250;width=50;height=50;bc=#99FF0000;pw=0;name=tail lump;"
+  shape[4] = "func=ell;x=100;y=250;width=450;height=100;bc=DarkCyan;pw=0;name=body;"
+  shape[5] = "func=ell;x=150;y=300;width=100;height=100;bc=#333333;pw=0;name=wheel 1;"
+  shape[6] = "func=ell;x=170;y=320;width=60;height=60;bc=Silver;pw=0;name=wheel cap 1;"
+  shape[7] = "func=ell;x=375;y=300;width=100;height=100;bc=#333333;pw=0;name=wheel 2;"
+  shape[8] = "func=ell;x=395;y=320;width=60;height=60;bc=Silver;pw=0;name=wheel cap 2;"
+  shape[9] = "func=rect;x=100;y=300;width=50;height=10;bc=Silver;pw=0;name=bumper 1;"
+  shape[10] = "func=rect;x=500;y=300;width=50;height=10;bc=Silver;pw=0;name=bumper 1;"
+EndSub
+
+Sub Shapes_Init_Frame
+  ' Shapes | Initialize shapes data
+  ' return shX, shY - current position of shapes
+  ' return shape - array of shapes
+  shX = 0 ' x offset
+  shY = 0 ' y offset
+  shape = ""
+  shape[1] = "func=rect;x=0;y=0;width=598;height=20;pw=0;bc=Black;"
+  shape[2] = "func=rect;x=0;y=269;width=598;height=20;pw=0;bc=Gray;"
+  shape[3] = "func=rect;x=0;y=289;width=598;height=20;pw=0;bc=Black;"
+  shape[4] = "func=rect;x=0;y=558;width=598;height=20;pw=0;bc=Gray;"
+  shape[5] = "func=rect;x=0;y=578;width=598;height=20;pw=0;bc=Black;"
+  shape[6] = "func=rect;x=0;y=0;width=70;height=598;pw=0;bc=Black;"
+  shape[7] = "func=rect;x=528;y=0;width=70;height=598;pw=0;bc=Black;"
+  shape[8] = "func=rect=x=15;y=26.25;width=40;height=40;pw=0;bc=White;"
+  shape[9] = "func=rect=x=15;y=98.75;width=40;height=40;pw=0;bc=White;"
+  shape[10] = "func=rect=x=15;y=171.25;width=40;height=40;pw=0;bc=White;"
+  shape[11] = "func=rect=x=15;y=243.75;width=40;height=40;pw=0;bc=White;"
+  shape[12] = "func=rect=x=15;y=316.25;width=40;height=40;pw=0;bc=White;"
+  shape[13] = "func=rect=x=15;y=388.75;width=40;height=40;pw=0;bc=White;"
+  shape[14] = "func=rect=x=15;y=461.25;width=40;height=40;pw=0;bc=White;"
+  shape[15] = "func=rect=x=15;y=533.75;width=40;height=40;pw=0;bc=White;"
+  shape[16] = "func=rect=x=543;y=26.25;width=40;height=40;pw=0;bc=White;"
+  shape[17] = "func=rect=x=543;y=98.75;width=40;height=40;pw=0;bc=White;"
+  shape[18] = "func=rect=x=543;y=171.25;width=40;height=40;pw=0;bc=White;"
+  shape[19] = "func=rect=x=543;y=243.75;width=40;height=40;pw=0;bc=White;"
+  shape[20] = "func=rect=x=543;y=316.25;width=40;height=40;pw=0;bc=White;"
+  shape[21] = "func=rect=x=543;y=388.75;width=40;height=40;pw=0;bc=White;"
+  shape[22] = "func=rect=x=543;y=461.25;width=40;height=40;pw=0;bc=White;"
+  shape[23] = "func=rect=x=543;y=533.75;width=40;height=40;pw=0;bc=White;"
+EndSub
+
+Sub Sprite_Add
+  ' Sprite | add shapes to a sprite
+  ' param name - sprite name
+  ' param shX, shY - origin of shape array
+  ' param scale - to resize 
+  ' param shape[] - shape array
+  ' param nSprite - number of sprite
+  ' return nSprite - updated number of sprite
+  ' return sprite[] - sprite array
+  Stack.PushValue("local", i)
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  nSprite = nSprite + 1
+  spr = ""
+  spr["name"] = name
+  spr["x"] = shX
+  spr["y"] = shY
+  spr["angle"] = 0
+  spr["dir"] = 1
+  Shapes_CalcWidthAndHeight()
+  spr["width"] = shWidth
+  spr["height"] = shHeight
+  spr["cx"] = shWidth / 2
+  spr["cy"] = shHeight / 2
+  s = scale
+  spr["scale"] = s
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    GraphicsWindow.PenWidth = shp["pw"] * s
+    If shp["pw"] > 0 Then
+      GraphicsWindow.PenColor = shp["pc"]
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text|btn", shp["func"]) Then
+      GraphicsWindow.BrushColor = shp["bc"]
+    EndIf
+    If Text.IsSubText("text|btn", shp["func"]) Then
+      If silverlight Then
+        fs = Math.Floor(shp["fs"] * 0.9)
+      Else
+        fs = shp["fs"]
+      EndIf
+      GraphicsWindow.FontSize = fs * s
+      GraphicsWindow.FontName = shp["fn"]
+      If shp["fb"] = "False" Then
+        GraphicsWindow.FontBold = "False"
+      Else
+        GraphicsWindow.FontBold = "True"
+      EndIf
+    EndIf
+    If shp["func"] = "rect" Then
+      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "ell" Then
+      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "tri" Then
+      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
+    ElseIf shp["func"] = "line" Then
+      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
+    ElseIf shp["func"] = "text" Then
+      shp["obj"] = Shapes.AddText(shp["text"])
+    EndIf
+    x = shp["x"]
+    y = shp["y"]
+    shp["rx"] = x
+    shp["ry"] = y
+    If sbd And (shp["func"] = "line") Then
+      shp["wx"] = x
+      shp["wy"] = y
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _alpha = Math.GetRadians(shp["angle"])
+      SB_RotateWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    If shp["func"] = "btn" Then
+      shp["obj"] = Controls.AddButton(shp["caption"], shX + x * s, shY + y * s)
+    Else
+      Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
+      Shapes.Rotate(shp["obj"], shp["angle"])
+    EndIf
+    shape[i] = shp
+  EndFor
+  spr["shape"] = shape
+  sprite[nSprite] = spr
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  i = Stack.PopValue("local")
+EndSub
+
+Sub Sprite_Move
+  ' Sprite | move a sprite
+  ' param sprite[i] - sprite to move
+  ' param x, y - position to move
+  ' return sprite[i] - updated sprite
+  Stack.PushValue("local", j)
+  spr = sprite[i]
+  s = spr["scale"]
+  spr["x"] = x
+  spr["y"] = y
+  shape = spr["shape"]
+  n = Array.GetItemCount(shape)
+  For j = 1 To n
+    shp = shape[j]
+    If sbd And (shp["func"] = "line") Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    Else
+      _x = shp["rx"]
+      _y = shp["ry"]
+    EndIf
+    Shapes.Move(shp["obj"], spr["x"] + _x * s, spr["y"]  + _y * s)
+  EndFor
+  sprite[i] = spr
+  j = Stack.PopValue("local")
+EndSub
