@@ -3,6 +3,13 @@
 
 This program is written in Microsoft Small Basic programming language.  Current version is just showing the form.
 
+## Release
+[Release](https://github.com/nonkit/Anime/releases) zip file contains following files.
+- Anime.exe - Anime editor
+- SmallBasicLibrary.dll - Small Basic Library
+- LitDev.dll - LitDev Extension
+- img - image files used in Anime editor
+
 ## Source
 
 Following files are main source.  Subfolders contain output samples.
