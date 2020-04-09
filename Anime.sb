@@ -1,8 +1,10 @@
-' Anime 0.5a
+' Anime
+' Version 0.6a
 ' Copyright © 2013-2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
+' Repository https://github.com/nonkit/Anime
 
-title = "Anime 0.5a"
+title = "Anime 0.6a"
 GraphicsWindow.Title = title
 Init()
 Form()
@@ -15,7 +17,6 @@ EndWhile
 Sub AddMenu
   ' Add menu
   menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;7=Undo;8=Redo;"
-  folder = Program.Directory + "\img"
   fs = 12
   GraphicsWindow.FontSize = fs
   GraphicsWindow.FontName = "Trebuchet MS"
@@ -37,6 +38,9 @@ Sub Form
   GraphicsWindow.Width = gw
   GraphicsWindow.Height = gh
   GraphicsWindow.BackgroundColor = "#EEEEEE"
+  folder = Program.Directory + "\img"
+  icon = folder + "\AnimeIcon.png"
+  LDGraphicsWindow.Icon = icon
   ' add rocket
   Shapes_Init_Rocket()
   name = "rocket"
