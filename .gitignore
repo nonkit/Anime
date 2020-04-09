@@ -1,7 +1,8 @@
-﻿# Windows execution files
+﻿# Binary files
 *.exe
 *.dll
 *.pdb
+*.zip
 
 # Temporary files
 *.settings

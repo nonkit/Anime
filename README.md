@@ -18,6 +18,7 @@ Following files are main source.  Subfolders contain output samples.
 - [Wiki](http://github.com/nonkit/Anime/wiki) (documents)
 - [Shapes](http://github.com/nonkit/Shapes) (sprite editor)
 
-## Other Resources
+## Additional Resources
 
 - [Small Basic](http://smallbasic.com)
+- [LitDev Extension](http://litdev.co.uk/)
