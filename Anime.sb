@@ -1,16 +1,12 @@
-' Anime 0.4a
-' Copyright © 2013-2017 Nonki Takahashi.  The MIT License.
-'
-' History:
-'  0.4a 2017-08-16 Added animation demo.
-'  0.3a 2016-04-17 Added menu icons.
-'  0.2a 2016-01-18 Changed graphics window size.
-'  0.1a 2013-05-24 Created as prototype version.
+' Anime 0.5a
+' Copyright © 2013-2020 Nonki Takahashi.  The MIT License.
+' Using LitDev Extension
 
-GraphicsWindow.Title = "Anime 0.4a"
+title = "Anime 0.5a"
+GraphicsWindow.Title = title
 Init()
 Form()
-GraphicsWindow.MouseDown = OnMouseDown
+LDControls.MenuClicked= OnMenuClicked
 While "True"
   WaitCommand()
   DoCommand()
@@ -18,26 +14,20 @@ EndWhile
 
 Sub AddMenu
   ' Add menu
-  menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;"
+  menu = "1=New;2=Open;3=Save;4=Cut;5=Copy;6=Paste;7=Undo;8=Redo;"
   folder = Program.Directory + "\img"
   fs = 12
-  fn = "Trebuchet MS"
-  fb = "False"
-  fi = "False"
-  x = 10
-  y = 4
-  bc = "White"
+  GraphicsWindow.FontSize = fs
+  GraphicsWindow.FontName = "Trebuchet MS"
+  GraphicsWindow.FontBold = "False"
+  GraphicsWindow.FontItalic = "False"
+  GraphicsWindow.BrushColor = "White"
   For i = 1 To Array.GetItemCount(menu)
-    imageName = folder + "\" + menu[i] + ".png"
-    Shapes_AddImage()
-    x = x + 6
-    y = y + 40
-    txt = menu[i]
-    Shapes_AddText()
-    x = x - 6
-    y = y - 40
-    x = x + 50
+    menuList[menu[i]] = "Main"
+    iconList[menu[i]] = folder + "\" + menu[i] + ".png"
   EndFor
+  menu = LDControls.AddMenu(gw, rh, menuList, iconList, "")
+  LDShapes.BrushColour(menu, bc)
 EndSub
 
 Sub Form
@@ -46,12 +36,13 @@ Sub Form
   gh = 600
   GraphicsWindow.Width = gw
   GraphicsWindow.Height = gh
-  GraphicsWindow.BackgroundColor = "White"
+  GraphicsWindow.BackgroundColor = "#EEEEEE"
   ' add rocket
   Shapes_Init_Rocket()
   name = "rocket"
+  scale = 1
   Group_Add()
-  rh = 64
+  rh = 22
   ww = 598
   wh = 428
   x = shX + (gw - ww) / 2
@@ -61,11 +52,13 @@ Sub Form
   ' add robot
   Shapes_Init_Robot()
   name = "robot"
+  scale = 3
   Group_Add()
-  x = shX + (gw - ww) / 2
-  y = shY + rh + (gh - rh - wh) / 2
+  x = shX + (gw - ww) / 2 - 50
+  y = shY + rh + (gh - rh - wh) / 2 - 40
   i = nGroup
   Group_Move()
+  scale = 1
   Group_Zoom()
   ' add frame
   shX = 0
@@ -86,22 +79,17 @@ Sub Form
   Shapes_AddRectangle()
   x = gw - width
   Shapes_AddRectangle()
-  ' add menu bar
-  bc = "#444444"
-  x = 0
-  y = 0
-  width = gw
-  height = rh
-  Shapes_AddRectangle()
-  ' add menu icons
-  AddMenu()
   name = "Frame"
   Group_Add()
+  ' add menu icons
+  bc = "#444444"
+  AddMenu()
 EndSub
 
 Sub DoCommand
   ' Do command
-  ' N/A
+  txt = "Menu " + LDControls.LastMenuItem + " clicked."
+  GraphicsWindow.ShowMessage(txt, title)
 EndSub
 
 Sub Init
@@ -112,21 +100,27 @@ Sub Init
   pc = "#000000"
   alpha = 0 ' dummy
   angle = 0
-  x2 = 0    ' dummy
-  y2 = 0    ' dummy
-  x3 = 0    ' dummy
-  y3 = 0    ' dummy
+  x2 = 0          ' dummy
+  y2 = 0          ' dummy
+  x3 = 0          ' dummy
+  y3 = 0          ' dummy
+  fn = "Tahoma"   ' dummy
+  fb = "True"     ' dummy
+  fi = "False"    ' dummy
+  txt = ""        ' dummy
+  imageName = ""  ' dummy
 EndSub
 
-Sub OnMouseDown
-  mx = GraphicsWindow.MouseX
-  my = GraphicsWindow.MouseY
-  mouseDown = "True"
+Sub OnMenuClicked
+  menuClicked = "True"
 EndSub
 
 Sub WaitCommand
   ' Wait command
-  ' N/A
+  menuClicked = "False"
+  While Not[menuClicked]
+    Program.Delay(100)
+  EndWhile
 EndSub
 
 Sub Font_GetTextWidth
@@ -196,116 +190,124 @@ Sub Font_Measure
   px = right - left
 EndSub
 
-Sub Group_Add
-  ' Group | add shapes to a group
-  ' param name - group name
-  ' param shX, shY, origin of shape array
-  ' param shape[] - shape array
-  ' param nGroup - number of group
-  ' return nGroup - updated number of group
-  ' return group - group array
-  Stack.PushValue("local", i)
-  Stack.PushValue("local", x)
-  Stack.PushValue("local", y)
-  Stack.PushValue("local", s)
-  nGroup = nGroup + 1
-  grp = ""
-  grp["name"] = name
-  grp["x"] = shX
-  grp["y"] = shY
-  grp["angle"] = 0
-  grp["dir"] = 1
-  Shapes_CalcWidthAndHeight()
-  grp["width"] = shWidth
-  grp["cx"] = shWidth / 2
-  grp["height"] = shHeight
-  s = 1
-  grp["scale"] = s
-  For i = 1 To Array.GetItemCount(shape)
-    shp = shape[i]
-    GraphicsWindow.PenWidth = shp["pw"] * s
-    If shp["pw"] > 0 Then
-      GraphicsWindow.PenColor = shp["pc"]
-    EndIf
-    If Text.IsSubText("rect|ell|tri|text", shp["func"]) Then
-      GraphicsWindow.BrushColor = shp["bc"]
-    EndIf
-    If shp["func"] = "rect" Then
-      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
-    ElseIf shp["func"] = "ell" Then
-      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
-    ElseIf shp["func"] = "tri" Then
-      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
-    ElseIf shp["func"] = "line" Then
-      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
-    ElseIf shp["func"] = "text" Then
-      If silverlight Then
-        fs = Math.Floor(shp["fs"] * 0.9)
-      Else
-        fs = shp["fs"]
-      EndIf
-      GraphicsWindow.FontSize = fs * s
-      GraphicsWindow.FontName = shp["fn"]
-      GraphicsWindow.FontBold = shp["fb"]
-      GraphicsWindow.FontItalic = shp["fi"]
-      shp["obj"] = Shapes.AddText(shp["text"])
-    ElseIf shp["func"] = "img" Then
-      shp["obj"] = Shapes.AddImage(shp["img"])
-      Shapes.Move(shp["obj"], shp["x"], shp["y"])
-    EndIf
-    x = shp["x"]
-    y = shp["y"]
-    shp["rx"] = x
-    shp["ry"] = y
-    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
-      alpha = Math.GetRadians(shp["angle"])
-      SB_RotateWorkaround()
-      shp["wx"] = x
-      shp["wy"] = y
-    EndIf
-    Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
-    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
-      Shapes.Rotate(shp["obj"], shp["angle"])
-    EndIf
-    shape[i] = shp
-  EndFor
-  grp["shape"] = shape
-  group[nGroup] = grp
-  s = Stack.PopValue("local")
-  y = Stack.PopValue("local")
-  x = Stack.PopValue("local")
-  i = Stack.PopValue("local")
+Sub Group_Add
+  ' Group | add shapes to a group
+  ' param name - group name
+  ' param shX, shY - origin of shape array
+  ' param scale - to resize 
+  ' param shape[] - shape array
+  ' param nGroup - number of group
+  ' return nGroup - updated number of group
+  ' return group - group array
+  Stack.PushValue("local", i)
+  Stack.PushValue("local", x)
+  Stack.PushValue("local", y)
+  nGroup = nGroup + 1
+  grp = ""
+  grp["name"] = name
+  grp["x"] = shX
+  grp["y"] = shY
+  grp["angle"] = 0
+  grp["dir"] = 1
+  Shapes_CalcWidthAndHeight()
+  grp["width"] = shWidth
+  grp["height"] = shHeight
+  grp["cx"] = shWidth / 2
+  grp["cy"] = shHeight / 2
+  s = scale
+  grp["scale"] = s
+  For i = 1 To Array.GetItemCount(shape)
+    shp = shape[i]
+    GraphicsWindow.PenWidth = shp["pw"] * s
+    If shp["pw"] > 0 Then
+      GraphicsWindow.PenColor = shp["pc"]
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text|btn", shp["func"]) Then
+      GraphicsWindow.BrushColor = shp["bc"]
+    EndIf
+    If Text.IsSubText("text|btn", shp["func"]) Then
+      If silverlight Then
+        fs = Math.Floor(shp["fs"] * 0.9)
+      Else
+        fs = shp["fs"]
+      EndIf
+      GraphicsWindow.FontSize = fs * s
+      GraphicsWindow.FontName = shp["fn"]
+      If shp["fb"] = "False" Then
+        GraphicsWindow.FontBold = "False"
+      Else
+        GraphicsWindow.FontBold = "True"
+      EndIf
+    EndIf
+    If shp["func"] = "rect" Then
+      shp["obj"] = Shapes.AddRectangle(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "ell" Then
+      shp["obj"] = Shapes.AddEllipse(shp["width"] * s, shp["height"] * s)
+    ElseIf shp["func"] = "tri" Then
+      shp["obj"] = Shapes.AddTriangle(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s, shp["x3"] * s, shp["y3"] * s)
+    ElseIf shp["func"] = "line" Then
+      shp["obj"] = Shapes.AddLine(shp["x1"] * s, shp["y1"] * s, shp["x2"] * s, shp["y2"] * s)
+    ElseIf shp["func"] = "text" Then
+      shp["obj"] = Shapes.AddText(shp["text"])
+    EndIf
+    x = shp["x"]
+    y = shp["y"]
+    shp["rx"] = x
+    shp["ry"] = y
+    If sbd And (shp["func"] = "line") Then
+      shp["wx"] = x
+      shp["wy"] = y
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _alpha = Math.GetRadians(shp["angle"])
+      SB_RotateWorkaround()
+      shp["wx"] = x
+      shp["wy"] = y
+    EndIf
+    If shp["func"] = "btn" Then
+      shp["obj"] = Controls.AddButton(shp["caption"], shX + x * s, shY + y * s)
+    Else
+      Shapes.Move(shp["obj"], shX + x * s, shY + y * s)
+    EndIf
+    If Text.IsSubText("rect|ell|tri|text", shp["func"]) And (shp["angle"] <> 0) And (shp["angle"] <> "") Then
+      Shapes.Rotate(shp["obj"], shp["angle"])
+    EndIf
+    shape[i] = shp
+  EndFor
+  grp["shape"] = shape
+  group[nGroup] = grp
+  y = Stack.PopValue("local")
+  x = Stack.PopValue("local")
+  i = Stack.PopValue("local")
 EndSub
 
-Sub Group_Move
-  ' Group | Move a group
-  ' param group[i] - the group to move
-  ' param x, y - the position to move
-  ' return group[i] - the updated group
-  Stack.PushValue("local", s)
-  Stack.PushValue("local", n)
+Sub Group_Move
+  ' Group | move a group
+  ' param group[i] - group To move
+  ' param x, y - position To move
+  ' return group[i] - updated group
   Stack.PushValue("local", j)
-  grp = group[i]
-  s = grp["scale"]
-  grp["x"] = x
-  grp["y"] = y
-  shape = grp["shape"]
-  n = Array.GetItemCount(shape)
-  For j = 1 To n
-    shp = shape[j]
-    If silverlight And Text.IsSubText("tri|line", shp["func"]) Then
-      _x = shp["wx"]
-      _y = shp["wy"]
-    Else
-      _x = shp["rx"]
-      _y = shp["ry"]
-    EndIf
-    Shapes.Move(shp["obj"], grp["x"] + _x * s, grp["y"] + _y * s)
-  EndFor
-  group[i] = grp
+  grp = group[i]
+  s = grp["scale"]
+  grp["x"] = x
+  grp["y"] = y
+  shape = grp["shape"]
+  n = Array.GetItemCount(shape)
+  For j = 1 To n
+    shp = shape[j]
+    If sbd And (shp["func"] = "line") Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    ElseIf silverlight And Text.IsSubText("tri|line", shp["func"]) Then
+      _x = shp["wx"]
+      _y = shp["wy"]
+    Else
+      _x = shp["rx"]
+      _y = shp["ry"]
+    EndIf
+    Shapes.Move(shp["obj"], grp["x"] + _x * s, grp["y"]  + _y * s)
+  EndFor
+  group[i] = grp
   j = Stack.PopValue("local")
-  n = Stack.PopValue("local")
-  s = Stack.PopValue("local")
 EndSub
 
 Sub Group_Zoom
@@ -353,14 +355,21 @@ Sub SB_RotateWorkaround
 EndSub
 
 Sub SB_Workaround
-  ' Small Basic | Workaround for Silverlight
-  ' returns silverlight - "True" if in remote
+  ' Small Basic | workaround for Silverlight / SBD
+  ' return silverlight - "True" if in remote
+  ' return sbd - "True" if Small Basic Desktop
   color = GraphicsWindow.GetPixel(0, 0)
+  sbd = "False"
   If Text.GetLength(color) > 7 Then
     silverlight = "True"
     msWait = 300
   Else
     silverlight = "False"
+    _gw = GraphicsWindow.Width
+    _gh = GraphicsWindow.Height
+    If (_gw = 624) And (_gh = 441) Then
+      sbd = "True"
+    EndIf
   EndIf
 EndSub
 
@@ -636,3 +645,4 @@ Sub Shapes_Save
   _shX = shX
   _shY = shY
 EndSub
+  
