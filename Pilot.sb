@@ -1,8 +1,8 @@
 ' Anime Pilot - to show anime array
-' Version 0.1
-' Copyright © 2019 Nonki Takahashi.  The MIT License.
-' Last update 2019-10-23
-' Program ID QXF519
+' Version 0.2
+' Copyright © 2019-2020 Nonki Takahashi.  The MIT License.
+' Last update 2020-04-09
+' Program ID QXF519-0
 
 Init()
 Anime_Init()
@@ -144,12 +144,12 @@ EndSub
 
 Sub Anime_Init
   anime = ""
-  anime[1] = "func=load;name=Stars1;x=0;y=0;path=stars.png;"
+  anime[1] = "func=load;name=Stars1;x=0;y=0;path=img/stars.png;"
   anime[2] = "func=move;name=Stars1;x=0;y=428;at=0s;dur=3s;"
   anime[3] = "func=move;name=Stars1;x=-598;y=0;at=3s;"
   anime[4] = "func=move;name=Stars1;x=0;y=0;at=6s;dur=3s;"
   anime[5] = "func=move;name=Stars1;x=0;y=-428;at=12s;dur=3s;"
-  anime[6] = "func=load;name=Stars2;x=0;y=-428;path=stars.png;"
+  anime[6] = "func=load;name=Stars2;x=0;y=-428;path=img/stars.png;"
   anime[7] = "func=move;name=Stars2;x=0;y=0;at=0s;dur=3s;"
   anime[8] = "func=move;name=Stars2;x=598;y=0;at=6s;dur=3s;"
   anime[9] = "func=move;name=Stars2;x=0;y=428;at=9s;"
