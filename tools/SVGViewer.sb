@@ -1,29 +1,25 @@
 ' SVG Viewer
-' Version 0.7b
+' Version 0.8b
 ' Copyright © 2020 Nonki Takahashi.  The MIT License.
 ' Using LitDev Extension
 
-title = "SVG Viewer 0.7b"
+title = "SVG Viewer 0.8b"
 Init()
 
 While "True"
   If menuClicked Then
-    path = LDDialogs.OpenFile("SVG", dir)
-    If path <> "" Then
-      GraphicsWindow.Title = title + " - loading..."
-      settings["dir"] = LDFile.GetFolder(path)
-      File.WriteContents(sfile, settings)
-      RemoveShapes()
-      nSVG = 0
-      level = 1
-      buf = ""
-      len = 0
-      LDxml.Open(path)
-      LDxml.FirstNode()
-      nodeName = LDxml.NodeName
-      SVG_Container()
-      ShowSVG()
-      GraphicsWindow.Title = title
+    lastMenuItem = LDControls.LastMenuItem
+    If lastMenuItem = "Open" Then
+      Open()
+    ElseIf lastMenuItem = "SVG" Then
+      Controls.SetTextBoxText(tbox, bufSVG)
+      view = "SVG"
+    ElseIf lastMenuItem = "Shape" Then
+      Controls.SetTextBoxText(tbox, bufShape)
+      view = "Shape"
+    ElseIf lastMenuItem = "Log" Then
+      Controls.SetTextBoxText(tbox, log)
+      view = "Log"
     EndIf
     menuClicked = "False"
   Else
@@ -131,7 +127,8 @@ Sub AddPoint
   If _points <> "" Then
     _points = _points + " "
   EndIf
-  _points = _points + x + "," + y
+  _points = _points + (Math.Round(x * 100) / 100) + ","
+  _points = _points + (Math.Round(y * 100) / 100)
 EndSub
 
 Sub AddQuadPoints
@@ -152,9 +149,33 @@ Sub AddQuadPoints
   yo = y
 EndSub
 
+Sub DumpShapeArray
+  bufShape = "Sub Shapes_Init" + LF
+  bufShape = bufShape + "  ' Shapes | initialize sample shapes data" + LF
+  bufShape = bufShape + "  ' return shX, shY - current position of shapes" + LF
+  bufShape = bufShape + "  ' return shape - array of shapes" + LF
+  bufShape = bufShape + "  shX = 0   ' x offset" + LF
+  bufShape = bufShape + "  shY = 0   ' y offset" + LF
+  bufShape = bufShape + "  shape = " + WQ + WQ + LF
+  For iShape = 1 To nShape
+    bufShape = bufShape + "  shape[" + iShape + "] = " + WQ + shape[iShape] + WQ + LF
+  EndFor
+  bufShape = bufShape + "EndSub" + LF
+EndSub
+
+Sub DumpSVG
+  bufSVG = ""
+  For iSVG = 1 To nSVG
+    bufSVG = bufSVG + "svg[" + iSVG + "] = " + WQ + svg[iSVG] + WQ + LF
+  EndFor
+EndSub
+
 Sub Init
-  GraphicsWindow.Title = title
+  GraphicsWindow.Title = "Untitled - " + title
   Not = "False=True;True=False;"
+  dumpShape = "True"
+  log = ""
+  view = "Shape"
   sfile = File.GetSettingsFilePath()
   If LDFile.Exists(sfile) Then
     settings = File.ReadContents(sfile)
@@ -180,6 +201,10 @@ Sub Init
   ' add menu
   menuList["File"] = "Main"
   menuList["Open"] = "File"
+  menuList["View"] = "Main"
+  menuList["SVG"] = "View"
+  menuList["Shape"] = "View"
+  menuList["Log"] = "View"
   GraphicsWindow.BrushColor = "Black"
   GraphicsWindow.FontName = "Segoe UI"
   GraphicsWindow.FontBold = "False"
@@ -227,6 +252,37 @@ Sub OnMenuClicked
   menuClicked = "True"
 EndSub
 
+Sub Open
+  path = LDDialogs.OpenFile("SVG", dir)
+  If path <> "" Then
+    fname = LDText.Replace(path, settings["dir"] + "\", "")
+    log = log + fname + LF
+    GraphicsWindow.Title = title + " - loading " + fname + "..."
+    settings["dir"] = LDFile.GetFolder(path)
+    File.WriteContents(sfile, settings)
+    RemoveShapes()
+    nSVG = 0
+    level = 1
+    buf = ""
+    len = 0
+    LDxml.Open(path)
+    LDxml.FirstNode()
+    nodeName = LDxml.NodeName
+    SVG_Container()
+    DumpSVG()
+    SVG2ShapeArray()
+    DumpShapeArray()
+    If view = "SVG" Then
+      Controls.SetTextBoxText(tbox, bufSVG)
+    ElseIf view = "Shape" Then
+      Controls.SetTextBoxText(tbox, bufShape)
+    ElseIf view = "Log" Then
+      Controls.SetTextBoxText(tbox, log)
+    EndIf
+    GraphicsWindow.Title = fname + " - " + title
+  EndIf
+EndSub
+
 Sub RemoveShapes
   For iShp = 1 To nShp
     Shapes.Remove(shp[iShp])
@@ -234,12 +290,160 @@ Sub RemoveShapes
   nShp = 0
 EndSub
 
-Sub ShowSVG
-  buf = ""
+Sub SVG2ShapeArray
+  shape = ""
+  nShape = 0
+  area = "circle|ellipse|polygon|rect|text"
   For iSVG = 1 To nSVG
-    buf = buf + "svg[" + iSVG + "] = " + WQ + svg[iSVG] + WQ + LF
+    _svg = svg[iSVG]
+    If Text.IsSubText("|" + area + "|line|image|", "|" + _svg["element"] + "|") Then
+      _shp = ""
+      If _svg["element"] = "circle" Then
+        _shp["func"] = "ell"
+        _shp["x"] = _svg["cx"] - _svg["r"]
+        _shp["y"] = _svg["cy"] - _svg["r"]
+        _shp["width"] = 2 * _svg["r"]
+        _shp["height"] = 2 * _svg["r"]
+      ElseIf _svg["element"] = "ellipse" Then
+        _shp["func"] = "ell"
+        _shp["x"] = _svg["cx"] - _svg["rx"]
+        _shp["y"] = _svg["cy"] - _svg["ry"]
+        _shp["width"] = 2 * _svg["rx"]
+        _shp["height"] = 2 * _svg["rx"]
+      ElseIf _svg["element"] = "line" Then
+        _shp["func"] = "line"
+        _shp["x1"] = _svg["x1"]
+        _shp["y1"] = _svg["y1"]
+        _shp["x2"] = _svg["x2"]
+        _shp["y2"] = _svg["y2"]
+      ElseIf _svg["element"] = "polygon" Then
+        _shp["func"] = "poly"
+        _shp["pt"] = _svg["points"]
+      ElseIf _svg["element"] = "rect" Then
+        _shp["func"] = "rect"
+        _shp["x"] = _svg["x"]
+        _shp["y"] = _svg["y"]
+        _shp["width"] = _svg["width"]
+        _shp["height"] = _svg["height"]
+      EndIf
+      If Text.IsSubText("|" + area + "|line|", "|" + _svg["element"] + "|") Then
+        If _svg["stroke-width"] <> "" Then
+          _shp["pw"] = _svg["stroke-width"]
+        Else
+          _shp["pw"] = 0
+        EndIf
+        If 0 < _shp["pw"] Then
+          If _svg["stroke"] = "none" Then
+            _shp["pc"] = "Transparent"
+          ElseIf _svg["stroke"] <> "" Then
+            _shp["pc"] = _svg["stroke"]
+          Else
+            _shp["pc"] = "Transparent"
+          EndIf
+        EndIf
+      EndIf
+      If Text.IsSubText("|" + area + "|", "|" + _svg["element"] + "|") Then
+        If _svg["fill"] = "none" Then
+          _shp["bc"] = "Transparent"
+        ElseIf _svg["fill"] <> "" Then
+          _shp["bc"] = _svg["fill"]
+        Else
+          _shp["bc"] = "Black"
+        EndIf
+      EndIf
+      nShape = nShape + 1
+      shape[nShape] = _shp
+    ElseIf _svg["element"] = "polyline" Then
+      If _svg["fill"] = "none" Then
+        bc = "Transparent"
+      ElseIf _svg["fill"] <> "" Then
+        bc = _svg["fill"]
+      Else
+        bc = "Black"
+      EndIf
+      If bc <> "Transparent" Then
+        _shp = ""
+        _shp["func"] = "poly"
+        _shp["pt"] = _svg["points"]
+        _shp["pw"] = 0
+        _shp["bc"] = bc
+        nShape = nShape + 1
+        shape[nShape] = _shp
+      EndIf
+      If _svg["stroke-width"] <> "" Then
+        pw = _svg["stroke-width"]
+      Else
+        pw = 0
+      EndIf
+      If 0 < pw Then
+        If _svg["stroke"] = "none" Then
+          pc = "Transparent"
+        ElseIf _svg["stroke"] <> "" Then
+          pc = _svg["stroke"]
+        Else
+          pc = "Transparent"
+        EndIf
+      EndIf
+      _shp = ""
+      pts = LDText.Split(_svg["points"], " ")
+      nPts = Array.GetItemCount(pts)
+      For iPts = 1 To nPts
+        _pt = LDText.Split(pts[iPts], ",")
+        x2 = _pt[1]
+        y2 = _pt[2]
+        If 1 < iPts Then
+          _shp["func"] = "line"
+          _shp["x1"] = x1
+          _shp["y1"] = y1
+          _shp["x2"] = x2
+          _shp["y2"] = y2
+          _shp["pw"] = pw
+          _shp["pc"] = pc
+          nShape = nShape + 1
+          shape[nShape] = _shp
+        EndIf
+        x1 = x2
+        y1 = y2
+      EndFor
+    ElseIf _svg["element"] = "path" Then
+      buf = _svg["d"]
+      render = "False"
+      Parse_d()
+      For iPoints = 1 To nPoints
+        _shp = ""
+        pts = LDText.Split(points[iPoints], " ")
+        nPts = Array.GetItemCount(pts)
+        If closed[iPoints] Then
+          _shp["func"] = "poly"
+          _shp["pt"] = points[iPoints] + " " + pts[nPts]
+        Else
+          _shp["func"] = "poly"
+          _shp["pt"] = points[iPoints]
+        EndIf
+        If _svg["stroke-width"] <> "" Then
+          _shp["pw"] = _svg["stroke-width"]
+        EndIf
+        If _svg["stroke"] = "none" Then
+          _shp["pc"] = "Transparent"
+        ElseIf _svg["stroke"] <> "" Then
+          _shp["pc"] = _svg["stroke"]
+        Else
+          _shp["pc"] = "Transparent"
+        EndIf
+        If _svg["fill"] = "none" Then
+          _shp["bc"] = "Transparent"
+        ElseIf _svg["fill"] <> "" Then
+          _shp["bc"] = _svg["fill"]
+        Else
+          _shp["bc"] = "Black"
+        EndIf
+        nShape = nShape + 1
+        shape[nShape] = _shp
+      EndFor
+    EndIf
   EndFor
-  Controls.SetTextBoxText(tbox, buf)
+  shX = 0
+  shY = 0
 EndSub
 
 Sub Math_CartesianToPolar
@@ -458,17 +662,18 @@ Sub Parse_d
       Parse_ClosePath()
     EndIf
   EndWhile
-  SVG_SetAttr()
-  For iPoints = 1 To nPoints
-    pt = ""
-    pts = LDText.Split(points[iPoints], " ")
-    nPts = Array.GetItemCount(pts)
-    If closed[iPoints] Then
-      Render_Polygon()
-    Else
-      Render_Polyline()
-    EndIf
-  EndFor
+  If render Then
+    SVG_SetAttr()
+    For iPoints = 1 To nPoints
+      pts = LDText.Split(points[iPoints], " ")
+      nPts = Array.GetItemCount(pts)
+      If closed[iPoints] Then
+        Render_Polygon()
+      Else
+        Render_Polyline()
+      EndIf
+    EndFor
+  EndIf
 EndSub
 
 Sub Parse_LineTo
@@ -767,6 +972,9 @@ Sub Parse_ViewBox
 EndSub
 
 Sub Render_Polygon
+  ' param pts[] - points for polygon
+  ' param nPts - number of points
+  pt = ""
   For iPts = 1 To nPts
     _pt = LDText.Split(pts[iPts], ",")
     pt[iPts][1] = Math.Round(_pt[1] * scale)
@@ -783,6 +991,8 @@ Sub Render_Polygon
 EndSub
 
 Sub Render_Polyline
+  ' param pts[] - points for polyline
+  ' param nPts - number of points
   For iPts = 1 To nPts
     _pt = LDText.Split(pts[iPts], ",")
     x2 = Math.Round(_pt[1] * scale)
@@ -807,7 +1017,17 @@ Sub SVG_Attr
   index = Array.GetAllIndices(attr)
   nAttr = Array.GetItemCount(attr)
   For iAttr = 1 To nAttr
-    buf = buf + index[iAttr] + "=" + attr[index[iAttr]] + ";"
+    If index[iAttr] = "style" Then
+      style = LDText.Split(attr["style"], ";")
+      nStyle = Array.GetItemCount(style)
+      For iStyle = 1 To nStyle
+        pair = LDText.Split(style[iStyle], ":")
+        buf = buf + pair[1] + "=" + pair[2] + ";"
+        attr[pair[1]] = pair[2] ' currently needed
+      EndFor
+    Else
+      buf = buf + index[iAttr] + "=" + attr[index[iAttr]] + ";"
+    EndIf
   EndFor
 EndSub
 
@@ -853,7 +1073,7 @@ Sub SVG_Container
           If Text.StartsWith(nodeName, "#") Then
             match = "True"  ' ignore this node
           Else
-            TextWindow.WriteLine("unknown node: " + nodeName)
+            log = log + "  unknown node: " + nodeName + LF
             match = "True"  ' ignore this node
           EndIf
         EndIf
@@ -982,6 +1202,7 @@ Sub SVG_Graphics
     If nodeName = "image" Then
     ElseIf nodeName = "path" Then
       buf = attr["d"]
+      render = "True"
       Parse_d()
       buf = ""
     ElseIf nodeName = "text" Then
@@ -1003,16 +1224,6 @@ Sub SVG_PaintServer
 EndSub
 
 Sub SVG_SetAttr
-  If attr["style"] <> "" Then
-    style = LDText.Split(attr["style"], ";")
-    nStyle = Array.GetItemCount(style)
-    For iStyle = 1 To nStyle
-      pair = LDText.Split(style[iStyle], ":")
-      If attr[pair[1]] = "" Then
-        attr[pair[1]] = LDText.Replace(pair[2], "\", "")
-      EndIf 
-    EndFor
-  EndIf
   If (attr["stroke"] = "") Or (attr["stroke"] = "none") Then
     GraphicsWindow.PenColor = "Transparent"
   Else
@@ -1040,3 +1251,4 @@ Sub SVG_Uncategorized
   If Text.IsSubText("|" + elements["gradient"] + "|", "|" + nodeName + "|") Then
   EndIf
 EndSub
+    
