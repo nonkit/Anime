@@ -1,6 +1,8 @@
 ![icon](img/AnimeIcon.png)
 # Anime in Small Basic
 
+[![Made with Small Basic](https://img.shields.io/badge/Made%20with-Small%20Basic-orange)](http://smallbasic.com)
+
 This program is written in Microsoft Small Basic programming language.  Current version is just showing the form.
 
 ## Release
@@ -18,6 +20,10 @@ Following files are main source.  Subfolders contain output samples.
 - Normalize.sb - Shapes Normalize Sample v0.1
 - Pilot.sb - Anime Pilot v0.2
 - Rocket.sb - Rocket Sprite v0.1
+
+## Credit
+
+Made with Small Basic badge is designed by [rockycodeshimhe-1332](https://docs.microsoft.com/en-us/answers/questions/210063/guys-i-made-a-nice-small-basic-github-badge.html) 
 
 ## See Also
 
